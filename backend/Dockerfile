@@ -1,7 +1,7 @@
 # Contender backend (FastAPI). No Chromium here — rendering lives in the frontend service.
 # Base + tool images are pinned immutably (version tag AND digest) — a bare version tag still
 # floats. Dependabot's docker ecosystem owns the bumps (.github/dependabot.yml).
-FROM python:3.14-slim@sha256:b877e50bd90de10af8d82c57a022fc2e0dc731c5320d762a27986facfc3355c1 AS base
+FROM python:3.14-slim@sha256:cea0e6040540fb2b965b6e7fb5ffa00871e632eef63719f0ea54bca189ce14a6 AS base
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
