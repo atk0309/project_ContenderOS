@@ -96,7 +96,8 @@ Tracked fixtures and design examples are synthetic. Keep the public repository t
 ## Contributing
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md) and the repository's [AGENTS.md](AGENTS.md) before changing
-code. The local quality gate is required for every contribution.
+code. The local quality gate is required for every contribution, and participation is governed by
+the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## License
 

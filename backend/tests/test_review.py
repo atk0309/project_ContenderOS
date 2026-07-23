@@ -25,6 +25,7 @@ from typing import TypeVar
 
 import app.ai.agents.registry as registry
 import httpx
+import httpx2
 import pytest
 from anthropic import APIError as AnthropicAPIError
 from app.ai.agents.fact_checker import apply_fact_check_authority
@@ -260,12 +261,12 @@ def _review(
     cv_id: str,
     workspace: str = "default",
     base_version: int | None = None,
-) -> httpx.Response:
+) -> httpx2.Response:
     """Blocking review (no `Accept`). `baseVersion` defaults to the stored CV's current version."""
     bv = base_version
     if bv is None:
         bv = int(client.get(f"/workspaces/{workspace}/cv/{cv_id}").json()["cv"]["version"])
-    res: httpx.Response = client.post(
+    res: httpx2.Response = client.post(
         f"/workspaces/{workspace}/cv/{cv_id}/review", json={"baseVersion": bv}
     )
     return res
@@ -273,7 +274,7 @@ def _review(
 
 def _stream_review(
     client: TestClient, cv_id: str, workspace: str = "default", base_version: int = 1
-) -> tuple[list[dict[str, object]], httpx.Headers]:
+) -> tuple[list[dict[str, object]], httpx2.Headers]:
     """Drive the SSE arm; collect parsed events up to and including `run_done`. Returns the events +
     the response headers (so a test can assert there is no `X-Run-Id`)."""
     events: list[dict[str, object]] = []
@@ -313,8 +314,8 @@ def test_review_cross_tenant_404(client: TestClient) -> None:
 # (`_get_review` is defined below in the persisted-review section; reused here.)
 
 
-def _delete_review(client: TestClient, cv_id: str, workspace: str = "default") -> httpx.Response:
-    res: httpx.Response = client.delete(f"/workspaces/{workspace}/cv/{cv_id}/review")
+def _delete_review(client: TestClient, cv_id: str, workspace: str = "default") -> httpx2.Response:
+    res: httpx2.Response = client.delete(f"/workspaces/{workspace}/cv/{cv_id}/review")
     return res
 
 
@@ -813,8 +814,8 @@ def test_fact_check_authority_grounds_sourceid_per_item() -> None:
 # --- persisted review runs (ADR 0013) -----------------------------------------------------------
 
 
-def _get_review(client: TestClient, cv_id: str, workspace: str = "default") -> httpx.Response:
-    res: httpx.Response = client.get(f"/workspaces/{workspace}/cv/{cv_id}/review")
+def _get_review(client: TestClient, cv_id: str, workspace: str = "default") -> httpx2.Response:
+    res: httpx2.Response = client.get(f"/workspaces/{workspace}/cv/{cv_id}/review")
     return res
 
 
@@ -824,8 +825,8 @@ def _put_decisions(
     decisions: dict[str, str],
     cv_version: int,
     workspace: str = "default",
-) -> httpx.Response:
-    res: httpx.Response = client.put(
+) -> httpx2.Response:
+    res: httpx2.Response = client.put(
         f"/workspaces/{workspace}/cv/{cv_id}/review/decisions",
         json={"decisions": decisions, "cvVersion": cv_version},
     )

@@ -3,6 +3,19 @@
 Durable changes to `AGENTS.md`, nested agent guidance, `CLAUDE.md`, repository scripts, and GitHub
 workflows are recorded here. The local `guidance-self-update` rule enforces that contract.
 
+## 2026-07-23 (public repository health hardening)
+
+- Added the missing CodeQL workflow for Python and JavaScript/TypeScript so the active `main`
+  ruleset's CodeQL requirement has a real producer on PRs, `main`, and a weekly schedule.
+- Added a code of conduct, structured privacy-safe issue forms, and a pull-request checklist to
+  complete the public contribution surface.
+- Kept the local gate warning-free on the pinned toolchain: backend route tests use Starlette's
+  `httpx2` TestClient path, while Next and Vitest workers disable Node 26's unused experimental web
+  storage.
+
+Why for future agents: keep the public community files privacy-first, keep CodeQL aligned with the
+languages and the `main` ruleset, and never satisfy a missing security check by weakening the rule.
+
 ## 2026-07-23 (dependency toolchain refresh)
 
 - Moved CI to `astral-sh/setup-uv@v9.0.0` (the release has no floating `v9` ref), pinned uv

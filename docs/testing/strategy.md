@@ -1,7 +1,7 @@
 # Testing Strategy
 
 Status: active  
-Last updated: 2026-07-03
+Last updated: 2026-07-23
 
 ## Quality gate model
 
@@ -27,7 +27,7 @@ silently ignored. A skipped check is a gap, not a pass. `--fail-on-gap` turns ga
 | Render | Playwright + `docx` | `frontend/src/render/` |
 | API types | generated from OpenAPI | `frontend/src/lib/api/generated-types.ts` |
 | Lint/format | ruff (be) / biome (fe) | `pyproject.toml`, `biome.json` |
-| Test | pytest (be) / vitest (fe) | `pyproject.toml`, `vitest.config.ts` |
+| Test | pytest + Starlette TestClient via `httpx2` (be) / vitest (fe) | `pyproject.toml`, `vitest.config.ts` |
 
 ## Canonical commands
 
@@ -65,7 +65,13 @@ silently ignored. A skipped check is a gap, not a pass. `--fail-on-gap` turns ga
   `ProviderRunner` **and** a fake model resolver (no live key, no DB, no network). The gated route
   test overrides `current_user` + `get_runner` + `get_model_resolver` via `app.dependency_overrides`.
   Also asserts the error mapping: refusal→422, truncation/parse→502, missing key/tier→503 (these
-  were raw 500s before the handlers landed). Backend AI deps: `anthropic`, `openai`.
+  were raw 500s before the handlers landed). Backend AI deps: `anthropic`, `openai`. Route tests use
+  Starlette's `TestClient` through the dev-only `httpx2` package; runtime Authlib and Resend calls
+  deliberately remain on `httpx`.
+- Frontend Next and Vitest worker processes disable Node 26's experimental web-storage global.
+  The vendored `docx` browser bundle probes `localStorage` during import, but neither build/render
+  code nor node-environment tests need it; disabling the unused API avoids warning noise and
+  stateful local-storage files without changing document output.
 - `backend/tests/test_providers.py` — the native-PDF plumbing (ADR 0007): with a mocked Anthropic
   client, `run_claude` builds a `document` content block + text block (vs a plain string) and
   forwards a per-agent `max_tokens`, all without a billed call. The real acceptance of a PDF block +

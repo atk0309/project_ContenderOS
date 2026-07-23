@@ -9,7 +9,7 @@ import asyncio
 import os
 from collections.abc import Iterator
 
-import httpx
+import httpx2
 import pytest
 from app.auth.deps import current_user
 from app.main import app
@@ -43,9 +43,9 @@ def client(sqlite_maker: async_sessionmaker[AsyncSession]) -> Iterator[TestClien
 
 def _put(
     client: TestClient, master: MasterProfile | None = None, workspace: str = "default"
-) -> httpx.Response:
+) -> httpx2.Response:
     payload = (master or sample_master_profile()).model_dump(by_alias=True)
-    res: httpx.Response = client.put(f"/workspaces/{workspace}/master", json=payload)
+    res: httpx2.Response = client.put(f"/workspaces/{workspace}/master", json=payload)
     return res
 
 

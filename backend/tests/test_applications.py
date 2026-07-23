@@ -14,7 +14,7 @@ import asyncio
 from collections.abc import Iterator
 from typing import Any, TypeVar
 
-import httpx
+import httpx2
 import pytest
 from app.ai.agents.registry import get_model_resolver, get_runner
 from app.auth.deps import current_user
@@ -188,14 +188,14 @@ def _apply(
     company: str | None = None,
     jobUrl: str | None = None,
     note: str | None = None,
-) -> httpx.Response:
+) -> httpx2.Response:
     bv = _version(client, cv_id, workspace) if base_version is None else base_version
     body: dict[str, object] = {"cvId": cv_id, "baseVersion": bv}
     extras = (("jobTitle", jobTitle), ("company", company), ("jobUrl", jobUrl), ("note", note))
     for key, val in extras:
         if val is not None:
             body[key] = val
-    res: httpx.Response = client.post(f"/workspaces/{workspace}/applications", json=body)
+    res: httpx2.Response = client.post(f"/workspaces/{workspace}/applications", json=body)
     return res
 
 

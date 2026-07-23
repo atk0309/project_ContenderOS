@@ -1,7 +1,7 @@
 # Deployment
 
 Status: active — seed doc  
-Last updated: 2026-07-03
+Last updated: 2026-07-23
 
 Update when a `*/.env.example` changes (`env-vars-changed`).
 
@@ -92,11 +92,16 @@ use it return **503** ("configure the provider in the admin menu") — correct f
 the schema no-drift check) on every PR and on push to `main`. **CI does not deploy** — it's the
 safety net. A Railway project deploys only after an operator connects and configures it.
 
+`.github/workflows/codeql.yml` separately scans both `python` and `javascript-typescript` with the
+`security-extended` query suite on PRs, pushes to `main`, and a weekly schedule. Keep that workflow
+enabled anywhere the `main` ruleset requires CodeQL; a CodeQL rule with no producing workflow leaves
+the repository protected in name but without an analysis result.
+
 To make deploys to `main` trustworthy, do **both**:
 
 1. **Branch protection on `main`** (GitHub → Settings → Branches → add rule for `main`): require a
-   pull request before merging, require the **`gate`** status check to pass, and block direct/force
-   pushes. Now red code cannot reach `main`.
+   pull request before merging, require the **`gate`** status check and CodeQL analysis to pass, and
+   block direct/force pushes. Now red code cannot reach `main`.
 2. **Railway: wait for CI** — in the Railway service settings, enable "Wait for CI" / check-suite
    gating so Railway only deploys a commit whose GitHub checks passed. (Belt-and-braces for any
    direct-to-`main` path.)
