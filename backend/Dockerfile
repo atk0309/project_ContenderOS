@@ -1,7 +1,7 @@
 # Contender backend (FastAPI). No Chromium here — rendering lives in the frontend service.
 # Base + tool images are pinned immutably (version tag AND digest) — a bare version tag still
 # floats. Dependabot's docker ecosystem owns the bumps (.github/dependabot.yml).
-FROM python:3.14-slim@sha256:b877e50bd90de10af8d82c57a022fc2e0dc731c5320d762a27986facfc3355c1 AS base
+FROM python:3.14-slim@sha256:cea0e6040540fb2b965b6e7fb5ffa00871e632eef63719f0ea54bca189ce14a6 AS base
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
@@ -10,7 +10,7 @@ ENV PYTHONUNBUFFERED=1 \
 WORKDIR /app
 
 # Install uv for fast, reproducible dependency resolution (pinned: version tag + digest).
-COPY --from=ghcr.io/astral-sh/uv:0.11.26@sha256:3d868e555f8f1dbc324afa005066cd11e1053fc4743b9808ca8025283e65efa5 /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv:0.11.31@sha256:ecd4de2f060c64bea0ff8ecb182ddf46ba3fcccdc8a60cfdbaf20d1a047d7437 /uv /uvx /bin/
 
 COPY pyproject.toml uv.lock ./
 # Install the EXACT locked runtime deps (no dev) — reproducible and identical to CI. `--frozen`
