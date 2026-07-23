@@ -36,6 +36,8 @@ renders a clear *needs-sign-off blocked state* instead of the document — so a 
 exported, only previewed (via the un-gated `GET /workspaces/{ws}/cv/{id}` preview bundle). An
 unreachable backend (bad `BACKEND_INTERNAL_URL` / ECONNREFUSED) is caught and surfaced as a clean
 `502` (mirroring `lib/proxy.ts`), so the export routes fail consistently rather than throwing a 500.
+Its diagnostic uses a constant format string and strips line separators from the workspace, CV, and
+error fields; the forwarded session cookie is never logged.
 
 **Synthetic sample only.** `frontend/src/render/fixtures.ts` and its tests use a clearly fictional
 candidate, `example.com` links, an invalid example country code, and synthetic contact details. The

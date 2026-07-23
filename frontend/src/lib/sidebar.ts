@@ -7,6 +7,7 @@ export type RailState = "expanded" | "collapsed";
 
 export const RAIL_KEY = "contender-rail";
 
-export const railInitScript = `(function(){try{var r=localStorage.getItem(${JSON.stringify(
-  RAIL_KEY,
-)});document.documentElement.dataset.rail=(r==='collapsed')?'collapsed':'expanded';}catch(e){document.documentElement.dataset.rail='expanded';}})();`;
+// Static source by design: never interpolate runtime data into executable bootstrap code.
+// bootstrap-scripts.test.ts pins the duplicated storage-key literal to RAIL_KEY.
+export const railInitScript =
+  "(function(){try{var r=localStorage.getItem('contender-rail');document.documentElement.dataset.rail=(r==='collapsed')?'collapsed':'expanded';}catch(e){document.documentElement.dataset.rail='expanded';}})();";

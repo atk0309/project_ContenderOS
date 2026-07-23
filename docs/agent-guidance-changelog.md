@@ -3,6 +3,16 @@
 Durable changes to `AGENTS.md`, nested agent guidance, `CLAUDE.md`, repository scripts, and GitHub
 workflows are recorded here. The local `guidance-self-update` rule enforces that contract.
 
+## 2026-07-23 (CodeQL alert remediation)
+
+- Replaced the doc-impact checker's shell command strings with argument-vector `git` subprocesses
+  and rejected option-like refs before Git sees them.
+- Kept the security-extended CodeQL workflow strict: the first baseline alerts are fixed in source
+  rather than hidden by weakening the query suite or dismissing actionable results.
+
+Why for future agents: pass subprocess arguments as arrays, keep executable bootstrap strings
+static, and remove line breaks from user-derived values before writing them to plain-text logs.
+
 ## 2026-07-23 (public repository health hardening)
 
 - Added the missing CodeQL workflow for Python and JavaScript/TypeScript so the active `main`

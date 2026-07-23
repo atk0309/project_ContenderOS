@@ -45,6 +45,9 @@ silently ignored. A skipped check is a gap, not a pass. `--fail-on-gap` turns ga
 
 ## Test inventory
 
+- `scripts/check-doc-impact.test.mjs` — the doc-impact harness's pure rules and scratch-repository
+  end-to-end modes, including rejection of option-like refs before the argument-vector Git
+  subprocess runs. No shell command strings or network.
 - `backend/tests/test_schema_roundtrip.py` — camelCase round-trip + the provenance/sign-off gate.
 - `backend/tests/test_app.py` — health + the OpenAPI codegen-anchor guard (every model is emitted).
 - `frontend/src/slop/heuristics.test.ts` — the deterministic AI-language detector, anchored by id.
@@ -103,7 +106,8 @@ silently ignored. A skipped check is a gap, not a pass. `--fail-on-gap` turns ga
   magic callback logs an allowlisted address in and rejects others, **live revocation**
   (de-allowlist mid-session → next request exactly **403**), the **legacy-cookie back-compat**
   (a stored `role` key is ignored; `login_user` writes the legacy-compatible value for rollback
-  safety), and `/auth/entra/login` returns 503 while M365 is unconfigured. Runs offline (no Resend/Entra calls). Auth deps:
+  safety), the development magic-link log strips attacker-controlled CR/LF, and `/auth/entra/login`
+  returns 503 while M365 is unconfigured. Runs offline (no Resend/Entra calls). Auth deps:
   `authlib`, `itsdangerous`, `httpx` (`backend/pyproject.toml`).
 - `backend/tests/test_logging_config.py` — the `JsonFormatter` (`app/logging_config.py`): JSON output
   carries `level`/`message`/`logger`/`time`, exception records keep the rendered traceback, and
@@ -353,7 +357,11 @@ silently ignored. A skipped check is a gap, not a pass. `--fail-on-gap` turns ga
   / empty list → not ready.
 - `frontend/src/render/fetch.test.ts` — `getRenderBundle`: maps a 200 export to a `RenderInput` while
   forwarding the session cookie, maps a 409 to a blocked result carrying the blocking bullet ids, and
-  relays other non-200s. Offline with a stubbed `global.fetch`.
+  relays other non-200s. The unreachable-backend case returns 502 and proves every constant-format
+  diagnostic field is line-break-free. Offline with a stubbed `global.fetch`.
+- `frontend/src/lib/bootstrap-scripts.test.ts` — pins the theme and sidebar pre-paint scripts'
+  static storage-key literals to `THEME_KEY` / `RAIL_KEY`, so executable bootstrap source stays
+  interpolation-free without allowing the exported constants to drift.
 - `frontend/src/app/api/render/pdf/route.test.ts` — the PDF auth handoff: after the gate precheck the
   route **injects the caller's session cookie into the Playwright context**, and a 409 from the gate
   is relayed **without launching Chromium**. Playwright is mocked — offline.

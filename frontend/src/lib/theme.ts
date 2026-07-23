@@ -6,6 +6,7 @@ export type ThemeName = "dark" | "light";
 
 export const THEME_KEY = "contender-theme";
 
-export const themeInitScript = `(function(){try{var t=localStorage.getItem(${JSON.stringify(
-  THEME_KEY,
-)});if(t!=='light'&&t!=='dark'){t=window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme='dark';}})();`;
+// Static source by design: never interpolate runtime data into executable bootstrap code.
+// bootstrap-scripts.test.ts pins the duplicated storage-key literal to THEME_KEY.
+export const themeInitScript =
+  "(function(){try{var t=localStorage.getItem('contender-theme');if(t!=='light'&&t!=='dark'){t=window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme='dark';}})();";

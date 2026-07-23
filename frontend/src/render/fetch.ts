@@ -22,6 +22,12 @@ export type RenderFetch =
   | { ok: true; input: RenderInput }
   | { ok: false; status: number; blockedBulletIds: string[] };
 
+function logField(value: unknown): string {
+  return String(value)
+    .replace(/\n/g, "")
+    .replace(/[\r\u2028\u2029]/g, "");
+}
+
 /**
  * Fetch {master, cv} for `cvId`, forwarding `cookieHeader` for auth. `ok:false` carries the upstream
  * status (409 = needs sign-off, with the blocking bullet ids; 401/403/404 otherwise) so callers can
@@ -44,7 +50,12 @@ export async function getRenderBundle(
   } catch (err) {
     // Upstream connection failure (backend down/unreachable, ECONNREFUSED, DNS). Log the workspace +
     // cv id only — never the cookie. Don't let it bubble as a Next 500; relay a clean 502.
-    console.error(`render fetch: upstream export ${workspaceId}/${cvId} failed`, err);
+    console.error(
+      "render fetch: upstream export failed workspace=%s cv=%s error=%s",
+      logField(workspaceId),
+      logField(cvId),
+      logField(err),
+    );
     return { ok: false, status: 502, blockedBulletIds: [] };
   }
 

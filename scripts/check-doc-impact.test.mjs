@@ -262,6 +262,13 @@ test('--head isolates the linted tip (pre-push semantics)', (t) => {
   assert.equal(lint(work, '--fail-on-gap', '--head', shaA).status, 0, 'pushed tip A is clean');
 });
 
+test('option-like refs are rejected before invoking git', (t) => {
+  const { work } = makeRepos(t);
+  const r = lint(work, '--head', '--help');
+  assert.equal(r.status, 1, r.out);
+  assert.match(r.out, /invalid --head ref/);
+});
+
 test('a deleted required doc never satisfies its rule', (t) => {
   const { work } = makeRepos(t);
   write(work, 'backend/app/persistence/store.py', 'x = 2\n');
