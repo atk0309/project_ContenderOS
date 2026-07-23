@@ -10,7 +10,7 @@ import asyncio
 from collections.abc import Iterator
 from typing import TypeVar
 
-import httpx
+import httpx2
 import pytest
 from app.ai.agents.registry import get_model_resolver, get_runner
 from app.auth.deps import current_user
@@ -151,9 +151,9 @@ def _signoff(
     *,
     base_version: int | None = None,
     workspace: str = "default",
-) -> httpx.Response:
+) -> httpx2.Response:
     bv = _version(client, cv_id, workspace) if base_version is None else base_version
-    res: httpx.Response = client.post(
+    res: httpx2.Response = client.post(
         f"/workspaces/{workspace}/cv/{cv_id}/signoff",
         json={"bulletIds": bullet_ids, "baseVersion": bv},
     )
@@ -168,9 +168,9 @@ def _edit(
     *,
     base_version: int | None = None,
     workspace: str = "default",
-) -> httpx.Response:
+) -> httpx2.Response:
     bv = _version(client, cv_id, workspace) if base_version is None else base_version
-    res: httpx.Response = client.post(
+    res: httpx2.Response = client.post(
         f"/workspaces/{workspace}/cv/{cv_id}/edit",
         json={"bulletId": bullet_id, "text": text, "baseVersion": bv},
     )

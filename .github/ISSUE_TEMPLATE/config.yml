@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security or personal-data exposure
+    url: https://github.com/atk0309/project_ContenderOS/security/advisories/new
+    about: Use the private reporting flow; never disclose secrets or personal data in a public issue.

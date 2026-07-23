@@ -1,0 +1,82 @@
+name: Bug report
+description: Report a reproducible problem in ContenderOS
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve ContenderOS. Use synthetic or redacted examples only.
+        Security vulnerabilities and personal-data exposures belong in the private
+        **Report a vulnerability** flow, not a public issue.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues for this problem.
+          required: true
+        - label: I removed credentials, real CV data, contact details, cookies, and account identifiers.
+          required: true
+        - label: This is not a security vulnerability or personal-data exposure.
+          required: true
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Problem
+      description: What went wrong, and what user-facing impact did it have?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Give the smallest reliable sequence using synthetic data.
+      placeholder: |
+        1. Start ...
+        2. Open ...
+        3. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: Release, branch, or commit SHA where the problem occurs.
+      placeholder: main at abc1234
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, browser, Node/Python versions, and deployment type if relevant.
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Sanitised logs or screenshots
+      description: Optional. Redact secrets, URLs with tokens, and all personal data.
+      render: shell

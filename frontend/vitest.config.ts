@@ -8,6 +8,9 @@ export default defineConfig({
   resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
   test: {
     environment: "node",
+    // docx's browser bundle probes global localStorage. Node 26 exposes experimental web storage
+    // and warns when no persistence file is configured; test workers need no web storage at all.
+    execArgv: ["--no-experimental-webstorage"],
     include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
     globals: true,
   },

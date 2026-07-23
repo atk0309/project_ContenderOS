@@ -21,7 +21,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import Any, TypeVar
 
-import httpx
+import httpx2
 import pytest
 from app.ai.agents.registry import (
     get_authoring_runner_builder,
@@ -213,9 +213,9 @@ def _apply(
     *,
     base_version: int | None = None,
     workspace: str = "default",
-) -> httpx.Response:
+) -> httpx2.Response:
     bv = _version(client, cv_id, workspace) if base_version is None else base_version
-    res: httpx.Response = client.post(
+    res: httpx2.Response = client.post(
         f"/workspaces/{workspace}/cv/{cv_id}/apply",
         json={"threads": threads, "baseVersion": bv},
     )

@@ -14,7 +14,7 @@ import json
 from collections.abc import Callable, Iterator
 from typing import Any, TypeVar
 
-import httpx
+import httpx2
 import pytest
 from app.ai import pdf_text
 from app.ai.agents.extractor import (
@@ -265,23 +265,23 @@ def client(sqlite_maker: async_sessionmaker[AsyncSession]) -> Iterator[TestClien
         app.dependency_overrides.clear()
 
 
-def _start(client: TestClient, text: str = "My CV text", ws: str = "default") -> httpx.Response:
-    res: httpx.Response = client.post(f"/workspaces/{ws}/ingest", json={"text": text})
+def _start(client: TestClient, text: str = "My CV text", ws: str = "default") -> httpx2.Response:
+    res: httpx2.Response = client.post(f"/workspaces/{ws}/ingest", json={"text": text})
     return res
 
 
 def _bulk(
     client: TestClient, run_id: str, proposals: list[dict[str, Any]], action: str = "accept"
-) -> httpx.Response:
+) -> httpx2.Response:
     items = [{"proposalId": p["proposalId"], "baseVersion": p["version"]} for p in proposals]
-    res: httpx.Response = client.post(
+    res: httpx2.Response = client.post(
         f"/workspaces/default/ingest/{run_id}/decide", json={"items": items, "action": action}
     )
     return res
 
 
-def _apply(client: TestClient, run_id: str) -> httpx.Response:
-    res: httpx.Response = client.post(f"/workspaces/default/ingest/{run_id}/apply")
+def _apply(client: TestClient, run_id: str) -> httpx2.Response:
+    res: httpx2.Response = client.post(f"/workspaces/default/ingest/{run_id}/apply")
     return res
 
 
@@ -732,8 +732,8 @@ def _upload(
     content_type: str = "application/pdf",
     source_type: str = "cv-pdf",
     ws: str = "default",
-) -> httpx.Response:
-    res: httpx.Response = client.post(
+) -> httpx2.Response:
+    res: httpx2.Response = client.post(
         f"/workspaces/{ws}/ingest/file",
         files={"file": (filename, _make_pdf() if content is None else content, content_type)},
         data={"sourceType": source_type},
