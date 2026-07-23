@@ -3,7 +3,7 @@
 # bundled so PDFs are byte-stable across environments (docs/architecture/renderer.md).
 # The base image is pinned immutably (version tag AND digest — a bare tag still floats) because
 # invariant 3 pins the render toolchain; Dependabot's docker ecosystem owns the bumps.
-FROM node:26-bookworm-slim@sha256:b16ca7b4dcfb20184e1c70f9ee30c6a75ed1da669cfafd6d2add4761b123d79f AS base
+FROM node:26-bookworm-slim@sha256:2d49d876e96237d76de412761cf05dbfe5aee325cc4406a4d41d5824c5bb8beb AS base
 ENV PNPM_HOME=/pnpm PATH=/pnpm:$PATH
 # Node 25+ stopped distributing corepack with the runtime (nodejs TSC decision, 2025-03) — install
 # it explicitly, VERSION-PINNED (an unpinned install would float a build-toolchain binary inside a
