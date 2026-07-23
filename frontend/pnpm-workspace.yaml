@@ -1,0 +1,17 @@
+allowBuilds:
+  "@biomejs/biome": true
+  esbuild: true
+  sharp: true
+
+minimumReleaseAgeExclude:
+  - baseline-browser-mapping@2.11.1
+
+updateConfig:
+  ignoreDependencies:
+    - typescript
+
+overrides:
+  "postcss@<8.5.10": ">=8.5.10"
+  "js-yaml@<4.3.0": "4.3.0"
+  "sharp@<0.35.3": "0.35.3"
+  "esbuild@<0.28.1": ">=0.28.1"

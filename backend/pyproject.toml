@@ -4,12 +4,12 @@ version = "0.1.0"
 description = "Contender backend — FastAPI service: AI agent panel, persistence, auth, the provenance gate."
 requires-python = ">=3.14"
 dependencies = [
-  "fastapi>=0.139.1",
+  "fastapi>=0.139.2",
   "pydantic>=2.9",
   "pydantic-settings>=2.14.2",
   "uvicorn[standard]>=0.51.0",
-  "anthropic>=0.116.0",  # messages.parse/parsed_output (structured outputs) — verified vs 0.109.2
-  "openai>=2.45.0",        # adjudication + list-models; non-beta responses.parse (verified vs 2.43.0)
+  "anthropic>=0.118.0",  # messages.parse/parsed_output (structured outputs) — verified vs 0.109.2
+  "openai>=2.47.0",        # adjudication + list-models; non-beta responses.parse (verified vs 2.43.0)
   "sqlalchemy[asyncio]>=2.0.51",  # persistence (admin-managed provider config)
   "asyncpg>=0.30",      # async Postgres driver for SQLAlchemy
   "cryptography>=43",   # Fernet — encrypt provider API keys at rest (was transitive via authlib)
@@ -22,7 +22,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-  "ruff>=0.15.21",
+  "ruff>=0.15.22",
   "mypy>=2.3.0",
   "pytest>=9.1.1",
   "aiosqlite>=0.20",  # offline test DB (sqlite+aiosqlite) so the suite needs no Postgres

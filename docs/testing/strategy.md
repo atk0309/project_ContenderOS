@@ -23,7 +23,7 @@ silently ignored. A skipped check is a gap, not a pass. `--fail-on-gap` turns ga
 | Schema | Pydantic | `backend/app/schema/` |
 | DB | Postgres + async SQLAlchemy (create_all; no Alembic yet — ADR 0006) | `backend/app/persistence/` |
 | AI | `anthropic` + `openai` (Python) | `backend/app/ai/providers/` |
-| Frontend | Next.js (App Router) + React 19, strict TS | `frontend/package.json`, `tsconfig.json` |
+| Frontend | Next.js (App Router) + React 19, strict TypeScript 7; TypeScript 5 is isolated to the OpenAPI generator peer | `frontend/package.json`, `tsconfig.json` |
 | Render | Playwright + `docx` | `frontend/src/render/` |
 | API types | generated from OpenAPI | `frontend/src/lib/api/generated-types.ts` |
 | Lint/format | ruff (be) / biome (fe) | `pyproject.toml`, `biome.json` |
