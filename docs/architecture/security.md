@@ -1,7 +1,7 @@
 # Security
 
 Status: active — seed doc  
-Last updated: 2026-07-22
+Last updated: 2026-07-23
 
 Update on any change under `backend/app/auth/` (`auth-change`) or workspace/ownership/isolation
 queries under `backend/app/persistence/` (`tenancy-change`).
@@ -60,6 +60,15 @@ invariant 8.
 - All `/ai/*` routes mount behind `Depends(current_user)`; `/admin/*` adds `require_owner` (owner
   only). Add allow **and** deny tests for any auth change (`backend/tests/test_auth.py`,
   `test_admin.py`).
+
+## Diagnostic logging
+
+Plain-text logs never receive raw line breaks from request-derived fields. The development-only
+magic-link fallback, CV review diagnostics, and application lifecycle logs strip CR/LF from email,
+URL, workspace, CV, application, and stage values before interpolation, preventing a caller from
+forging additional log entries. The renderer follows the same rule for upstream-fetch diagnostics:
+its format string is constant, every field removes line separators, and the session cookie is never
+logged. `test_auth.py` and `render/fetch.test.ts` pin those boundaries.
 
 ## Tenant isolation (invariant 8)
 

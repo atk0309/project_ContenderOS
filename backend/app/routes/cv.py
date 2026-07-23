@@ -419,7 +419,10 @@ async def read_review(
     # orphan row). Never serve a review for a CV that no longer exists — self-heal by deleting
     # the orphan and reading as absent.
     if not await cv_store.cv_exists(session, workspace_id, cv_id):
-        log.warning("review: orphan review row for deleted cv=%s; removing", cv_id)
+        log.warning(
+            "review: orphan review row for deleted cv=%s; removing",
+            cv_id.replace("\r", "").replace("\n", ""),
+        )
         await review_store.delete_review(session, workspace_id, cv_id)
         await session.commit()
         return None
@@ -435,7 +438,8 @@ async def read_review(
         )
     except ValidationError:
         log.warning(
-            "review: stored review for cv=%s no longer validates; treating as absent", cv_id
+            "review: stored review for cv=%s no longer validates; treating as absent",
+            cv_id.replace("\r", "").replace("\n", ""),
         )
         return None
 

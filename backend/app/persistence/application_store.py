@@ -167,7 +167,12 @@ async def apply(
         # serializes the two, so this is the SQLite/no-advisory-lock backstop.)
         await session.rollback()
         raise AlreadyApplied(cv_id) from exc
-    log.info("application created: %s cv=%s ws=%s", application.id, cv_id, workspace_id)
+    log.info(
+        "application created: %s cv=%s ws=%s",
+        application.id.replace("\r", "").replace("\n", ""),
+        cv_id.replace("\r", "").replace("\n", ""),
+        workspace_id.replace("\r", "").replace("\n", ""),
+    )
     return application
 
 
@@ -235,7 +240,11 @@ async def update_stage(
     row.application = application.model_dump(mode="json", by_alias=True)
     await session.commit()
     log.info(
-        "application stage change: %s %s -> %s ws=%s", application_id, prev, stage, workspace_id
+        "application stage change: %s %s -> %s ws=%s",
+        application_id.replace("\r", "").replace("\n", ""),
+        prev.replace("\r", "").replace("\n", ""),
+        stage.replace("\r", "").replace("\n", ""),
+        workspace_id.replace("\r", "").replace("\n", ""),
     )
     return application
 
@@ -257,7 +266,11 @@ async def update_recruiter(
     application.recruiter_email = recruiter_email
     row.application = application.model_dump(mode="json", by_alias=True)
     await session.commit()
-    log.info("application recruiter updated: %s ws=%s", application_id, workspace_id)
+    log.info(
+        "application recruiter updated: %s ws=%s",
+        application_id.replace("\r", "").replace("\n", ""),
+        workspace_id.replace("\r", "").replace("\n", ""),
+    )
     return application
 
 
@@ -287,4 +300,9 @@ async def delete_application(session: AsyncSession, workspace_id: str, applicati
     # in the SAME commit under the lock. delete_review rides this transaction (no inner commit).
     await review_store.delete_review(session, workspace_id, cv_id)
     await session.commit()
-    log.info("application deleted: %s cv=%s ws=%s", application_id, cv_id, workspace_id)
+    log.info(
+        "application deleted: %s cv=%s ws=%s",
+        application_id.replace("\r", "").replace("\n", ""),
+        cv_id.replace("\r", "").replace("\n", ""),
+        workspace_id.replace("\r", "").replace("\n", ""),
+    )

@@ -5,9 +5,11 @@ persists across requests in the TestClient."""
 
 from __future__ import annotations
 
+import asyncio
+
 import pytest
 from app.auth.allowlist import is_allowlisted
-from app.auth.magic import make_magic_token, read_magic_token
+from app.auth.magic import make_magic_token, read_magic_token, send_magic_email
 from app.auth.session import get_session_user, login_user
 from app.config import settings
 from app.main import app
@@ -30,6 +32,24 @@ def test_magic_token_roundtrip() -> None:
     token = make_magic_token("Owner@Example.com")
     assert read_magic_token(token) == "owner@example.com"  # normalized
     assert read_magic_token("not-a-real-token") is None
+
+
+def test_dev_magic_link_log_strips_line_breaks(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    monkeypatch.setattr(settings, "resend_api_key", "")
+    with caplog.at_level("WARNING", logger="contender.auth"):
+        asyncio.run(
+            send_magic_email(
+                to="owner@example.com\r\nforged-recipient",
+                link="https://example.test/magic\r\nforged-entry",
+            )
+        )
+    message = caplog.records[-1].getMessage()
+    assert "\r" not in message
+    assert "\n" not in message
+    assert "forged-recipient" in message
+    assert "forged-entry" in message
 
 
 def test_me_requires_session() -> None:

@@ -37,7 +37,7 @@
  *
  * Node stdlib only. Favours false positives — acknowledge via the trailer.
  */
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -175,23 +175,27 @@ export function bucketsDiffer(before, after) {
 // Git plumbing + CLI
 // ---------------------------------------------------------------------------------------------
 
-let shCwd = process.cwd();
-const sh = (cmd) => {
+let repoCwd = process.cwd();
+const git = (...args) => {
   try {
-    return execSync(cmd, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], cwd: shCwd }).trim();
+    return execFileSync('git', args, {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+      cwd: repoCwd,
+    }).trim();
   } catch {
     return '';
   }
 };
 
-const REF_RE = /^[\w./~^@{}-]+$/; // sanity-check user-supplied refs before shelling out
+const REF_RE = /^(?!-)[\w./~^@{}-]+$/; // reject malformed or option-like user-supplied refs
 
 function resolveRef(ref, flag) {
   if (!REF_RE.test(ref)) {
     console.error(`check-doc-impact: invalid ${flag} ref: ${ref}`);
     process.exit(1);
   }
-  const sha = sh(`git rev-parse --verify --quiet ${ref}^{commit}`);
+  const sha = git('rev-parse', '--verify', '--quiet', `${ref}^{commit}`);
   if (!sha) {
     console.error(`check-doc-impact: cannot resolve ${flag} ${ref}`);
     process.exit(1);
@@ -204,12 +208,12 @@ function depBuckets(path, source) {
   let blob;
   if (source && source.worktree) {
     try {
-      blob = readFileSync(join(shCwd, path), 'utf8');
+      blob = readFileSync(join(repoCwd, path), 'utf8');
     } catch {
       return null;
     }
   } else {
-    blob = sh(`git show ${source}:${path}`);
+    blob = git('show', `${source}:${path}`);
     if (!blob) return null; // absent / unreadable at this ref → unknown
   }
   try {
@@ -248,8 +252,10 @@ function main() {
   const againstArg = flagValue('--against');
   const headArg = flagValue('--head');
 
-  shCwd = sh('git rev-parse --show-toplevel') || process.cwd();
-  const head = headArg ? resolveRef(headArg, '--head') : sh('git rev-parse --verify --quiet HEAD');
+  repoCwd = git('rev-parse', '--show-toplevel') || process.cwd();
+  const head = headArg
+    ? resolveRef(headArg, '--head')
+    : git('rev-parse', '--verify', '--quiet', 'HEAD');
   if (!head) {
     console.log('check-doc-impact: no commits yet — skipping.');
     process.exit(0);
@@ -262,14 +268,14 @@ function main() {
   if (againstArg) {
     base = resolveRef(againstArg, '--against');
   } else {
-    const originMain = sh('git rev-parse --verify --quiet origin/main');
-    const mb = originMain ? sh(`git merge-base ${head} origin/main`) : '';
+    const originMain = git('rev-parse', '--verify', '--quiet', 'origin/main');
+    const mb = originMain ? git('merge-base', head, 'origin/main') : '';
     if (mb && mb !== head) {
       base = mb;
     } else if (worktree) {
       base = head; // on main / no upstream: lint the worktree changes only
     } else {
-      const prev = sh(`git rev-parse --verify --quiet ${head}~1`);
+      const prev = git('rev-parse', '--verify', '--quiet', `${head}~1`);
       if (!prev) {
         console.log('check-doc-impact: no prior commit to diff against — skipping (first commit).');
         process.exit(0);
@@ -280,7 +286,9 @@ function main() {
   }
 
   const committedDiff =
-    base === head ? [] : parseNameStatus(sh(`git diff --no-renames --name-status ${base} ${head}`));
+    base === head
+      ? []
+      : parseNameStatus(git('diff', '--no-renames', '--name-status', base, head, '--'));
   // --worktree: rules LIGHT from committed ∪ base→worktree ∪ untracked. The ack-exempt bucket is
   // the DIRTY SET ONLY (head→worktree ∪ untracked) — never base→worktree, which on a clean tree
   // reproduces the whole committed diff and would discard valid committed acks.
@@ -288,12 +296,15 @@ function main() {
   let untracked = [];
   let dirty = [];
   if (worktree) {
-    baseToWorktree = parseNameStatus(sh(`git diff --no-renames --name-status ${base}`));
-    untracked = sh('git ls-files --others --exclude-standard')
+    baseToWorktree = parseNameStatus(git('diff', '--no-renames', '--name-status', base, '--'));
+    untracked = git('ls-files', '--others', '--exclude-standard')
       .split('\n')
       .filter(Boolean)
       .map((p) => ({ status: 'A', path: p }));
-    dirty = [...parseNameStatus(sh(`git diff --no-renames --name-status ${head}`)), ...untracked];
+    dirty = [
+      ...parseNameStatus(git('diff', '--no-renames', '--name-status', head, '--')),
+      ...untracked,
+    ];
   }
   const lighting = [...committedDiff, ...baseToWorktree, ...untracked];
   const changedPaths = new Set(lighting.map((e) => e.path));
@@ -307,11 +318,18 @@ function main() {
 
   // Ack scan: non-merge commits in range, each judged on its OWN diff (computed lazily).
   const rangeCommits =
-    base === head ? [] : sh(`git log --no-merges --format=%H ${base}..${head}`).split('\n').filter(Boolean);
+    base === head
+      ? []
+      : git('log', '--no-merges', '--format=%H', `${base}..${head}`, '--')
+          .split('\n')
+          .filter(Boolean);
   const commitDiffCache = new Map();
   const commitDiff = (c) => {
     if (!commitDiffCache.has(c)) {
-      commitDiffCache.set(c, parseNameStatus(sh(`git diff --no-renames --name-status ${c}^ ${c}`)));
+      commitDiffCache.set(
+        c,
+        parseNameStatus(git('diff', '--no-renames', '--name-status', `${c}^`, c, '--')),
+      );
     }
     return commitDiffCache.get(c);
   };
@@ -320,7 +338,7 @@ function main() {
   // an ack riding a version-only bump must not validate a later structural change.
   const ackedOnLightingCommit = (rule) =>
     rangeCommits.some((c) => {
-      if (!hasValidAck(sh(`git log -1 --format=%B ${c}`), rule.id)) return false;
+      if (!hasValidAck(git('log', '-1', '--format=%B', c, '--'), rule.id)) return false;
       const diff = commitDiff(c);
       if (!ruleLit(rule, diff)) return false;
       if (rule.confirmLit) {

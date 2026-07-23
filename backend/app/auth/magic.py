@@ -35,7 +35,11 @@ def read_magic_token(token: str) -> str | None:
 async def send_magic_email(*, to: str, link: str) -> None:
     """Email the sign-in link via Resend. Without a key (dev), log the link instead of sending."""
     if not settings.resend_api_key:
-        log.warning("RESEND_API_KEY unset — magic link for %s: %s", to, link)
+        log.warning(
+            "RESEND_API_KEY unset — magic link for %s: %s",
+            to.replace("\r", "").replace("\n", ""),
+            link.replace("\r", "").replace("\n", ""),
+        )
         return
     async with httpx.AsyncClient(timeout=10.0) as client:
         resp = await client.post(

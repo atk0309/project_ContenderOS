@@ -58,15 +58,22 @@ describe("getRenderBundle", () => {
   });
 
   it("returns a clean 502 (not a throw) when the backend is unreachable", async () => {
-    const cause = Object.assign(new Error("connect ECONNREFUSED"), { code: "ECONNREFUSED" });
+    const cause = Object.assign(new Error("connect\nECONNREFUSED"), { code: "ECONNREFUSED" });
     vi.stubGlobal(
       "fetch",
-      vi.fn(() => Promise.reject(Object.assign(new TypeError("fetch failed"), { cause }))),
+      vi.fn(() => Promise.reject(Object.assign(new TypeError("fetch\r\nfailed"), { cause }))),
     );
-    vi.spyOn(console, "error").mockImplementation(() => {});
+    const errorLog = vi.spyOn(console, "error").mockImplementation(() => {});
 
-    const result = await getRenderBundle("cv-123", "session=abc");
+    const result = await getRenderBundle("cv-\nforged", "session=abc", "ws-\r\nforged");
 
     expect(result).toEqual({ ok: false, status: 502, blockedBulletIds: [] });
+    expect(errorLog).toHaveBeenCalledOnce();
+    expect(errorLog.mock.calls[0]?.[0]).toBe(
+      "render fetch: upstream export failed workspace=%s cv=%s error=%s",
+    );
+    for (const field of errorLog.mock.calls[0] ?? []) {
+      expect(String(field)).not.toMatch(/[\r\n\u2028\u2029]/);
+    }
   });
 });
