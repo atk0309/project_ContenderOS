@@ -1,0 +1,5453 @@
+{
+  "components": {
+    "schemas": {
+      "AcceptedThread": {
+        "description": "An accepted review thread the owner echoes back to `/apply`. Reviews are now persisted (ADR\n0013), but `/apply` still takes the client's accepted-thread echo \u2014 the server re-grounds them\nagainst stored truth (invariant 2), so resolving accepted threads from the stored review row is\noptional hardening, out of scope. The surface emits `Thread` SUBCLASSES with extra fields\n(`SlopThread.flag`, `FactCheckThread.claim`/`verdict`/`sourceId`) plus the frontend's\n`key`/`source`; `CamelModel` is `extra=\"forbid\"`, so a verbatim echo would 422 at the boundary.\nThis **ignores** the report-only / UI-only extras, keeping just the anchor + `suggestedRevision`\nthe Corrector needs \u2014 and stays a `Thread`, so `ground_thread_anchors` accepts it.",
+        "properties": {
+          "anchorId": {
+            "title": "Anchorid",
+            "type": "string"
+          },
+          "anchorKind": {
+            "$ref": "#/components/schemas/AnchorKind",
+            "default": "bullet"
+          },
+          "comment": {
+            "title": "Comment",
+            "type": "string"
+          },
+          "severity": {
+            "$ref": "#/components/schemas/Severity"
+          },
+          "suggestedRevision": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestedrevision"
+          }
+        },
+        "required": [
+          "anchorId",
+          "severity",
+          "comment"
+        ],
+        "title": "AcceptedThread",
+        "type": "object"
+      },
+      "AdminProviderStatus": {
+        "additionalProperties": false,
+        "description": "Everything the Admin Menu needs to render one provider's card: key status + model config.\nFlat (not nested) so the frontend reads one object per provider.",
+        "properties": {
+          "availableModels": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Availablemodels",
+            "type": "array"
+          },
+          "isSet": {
+            "title": "Isset",
+            "type": "boolean"
+          },
+          "last4": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last4"
+          },
+          "provider": {
+            "$ref": "#/components/schemas/Provider"
+          },
+          "syncedAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Syncedat"
+          },
+          "tierCheap": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tiercheap"
+          },
+          "tierFast": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tierfast"
+          },
+          "tierStrong": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tierstrong"
+          },
+          "updatedAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updatedat"
+          }
+        },
+        "required": [
+          "provider",
+          "isSet"
+        ],
+        "title": "AdminProviderStatus",
+        "type": "object"
+      },
+      "AdminStatus": {
+        "additionalProperties": false,
+        "description": "The whole settings page in one GET \u2014 one entry per provider.",
+        "properties": {
+          "providers": {
+            "items": {
+              "$ref": "#/components/schemas/AdminProviderStatus"
+            },
+            "title": "Providers",
+            "type": "array"
+          }
+        },
+        "required": [
+          "providers"
+        ],
+        "title": "AdminStatus",
+        "type": "object"
+      },
+      "AgentDone": {
+        "additionalProperties": false,
+        "properties": {
+          "agentId": {
+            "title": "Agentid",
+            "type": "string"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "type": {
+            "const": "agent_done",
+            "default": "agent_done",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "agentId",
+          "ok"
+        ],
+        "title": "AgentDone",
+        "type": "object"
+      },
+      "AgentFailure": {
+        "additionalProperties": false,
+        "description": "One adjudicator that RAN and degraded (provider refusal / truncation / parse-fail / API\nerror). Distinct from a null report field, which means the agent didn't apply (e.g. a no-job\ndraft has no posting \u2192 `gatekeeper`/`editor` are null, with no failure). Surfacing the failure\nexplicitly is invariant 5 (\"surface refusal/truncation/parse-fail loudly\") on the blocking arm,\nwhich has no SSE `AgentDone(ok=false)` to carry it.",
+        "properties": {
+          "agentId": {
+            "title": "Agentid",
+            "type": "string"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          }
+        },
+        "required": [
+          "agentId",
+          "detail"
+        ],
+        "title": "AgentFailure",
+        "type": "object"
+      },
+      "AgentProgress": {
+        "additionalProperties": false,
+        "properties": {
+          "agentId": {
+            "title": "Agentid",
+            "type": "string"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "type": {
+            "const": "agent_progress",
+            "default": "agent_progress",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "agentId",
+          "note"
+        ],
+        "title": "AgentProgress",
+        "type": "object"
+      },
+      "AgentReport": {
+        "additionalProperties": false,
+        "description": "One adjudicator's result, streamed the moment it lands. A concrete envelope (NOT a bare\nunion) so codegen emits one stable type: `agentId` identifies which agent, and exactly ONE\nreport field is populated (others null). The client merges it into its `ReviewBundle`.",
+        "properties": {
+          "agentId": {
+            "title": "Agentid",
+            "type": "string"
+          },
+          "editor": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EditorReport"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "factCheck": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FactCheckReport"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "gatekeeper": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GatekeeperVerdict"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "slop": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SlopReport"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": {
+            "const": "agent_report",
+            "default": "agent_report",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "agentId"
+        ],
+        "title": "AgentReport",
+        "type": "object"
+      },
+      "AgentStarted": {
+        "additionalProperties": false,
+        "properties": {
+          "agentId": {
+            "title": "Agentid",
+            "type": "string"
+          },
+          "type": {
+            "const": "agent_started",
+            "default": "agent_started",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "agentId"
+        ],
+        "title": "AgentStarted",
+        "type": "object"
+      },
+      "AnchorKind": {
+        "description": "What a review thread is pinned to. Anchors are *stable ids*, never array indices.",
+        "enum": [
+          "bullet",
+          "item",
+          "section",
+          "summary"
+        ],
+        "title": "AnchorKind",
+        "type": "string"
+      },
+      "Application": {
+        "additionalProperties": false,
+        "description": "A tracked job application. `tailored_cv_ref` is the locked `StoredCV.id`; `job_title` is\nserver-resolved (request title, else the CV's `cv_labels` title) so it's never blank. `stage` is\nthe current stage (one of `stages`); `events` is the append-only timeline.",
+        "properties": {
+          "appliedAt": {
+            "format": "date-time",
+            "title": "Appliedat",
+            "type": "string"
+          },
+          "company": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company"
+          },
+          "events": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/StageEvent"
+            },
+            "title": "Events",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "jobTitle": {
+            "minLength": 1,
+            "title": "Jobtitle",
+            "type": "string"
+          },
+          "jobUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Joburl"
+          },
+          "recruiterEmail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recruiteremail"
+          },
+          "recruiterName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recruitername"
+          },
+          "stage": {
+            "title": "Stage",
+            "type": "string"
+          },
+          "stages": {
+            "default": [
+              "applied",
+              "acknowledged",
+              "screen",
+              "interview",
+              "final",
+              "offer",
+              "rejected",
+              "withdrawn"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "title": "Stages",
+            "type": "array"
+          },
+          "tailoredCvRef": {
+            "title": "Tailoredcvref",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "jobTitle",
+          "tailoredCvRef",
+          "appliedAt",
+          "stage"
+        ],
+        "title": "Application",
+        "type": "object"
+      },
+      "ApplicationConflict": {
+        "additionalProperties": false,
+        "description": "409 body carrying a `ConflictCode` discriminator + a human detail.",
+        "properties": {
+          "code": {
+            "$ref": "#/components/schemas/ConflictCode"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "detail"
+        ],
+        "title": "ApplicationConflict",
+        "type": "object"
+      },
+      "ApplicationSummary": {
+        "additionalProperties": false,
+        "description": "A lightweight row for the tracker list \u2014 enough to label, badge the stage, and open the\ndetail without shipping the full timeline. `applied_at` is the stored time (UTC on the wire).",
+        "properties": {
+          "appliedAt": {
+            "format": "date-time",
+            "title": "Appliedat",
+            "type": "string"
+          },
+          "company": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company"
+          },
+          "cvId": {
+            "title": "Cvid",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "jobTitle": {
+            "title": "Jobtitle",
+            "type": "string"
+          },
+          "stage": {
+            "title": "Stage",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "jobTitle",
+          "stage",
+          "appliedAt",
+          "cvId"
+        ],
+        "title": "ApplicationSummary",
+        "type": "object"
+      },
+      "ApplyConflict": {
+        "additionalProperties": false,
+        "description": "A proposal `apply` skipped (e.g. a stale enrich target in PR-E, or a malformed unit) so the\nrest of the accepted set still lands \u2014 apply is partial, never all-or-nothing.",
+        "properties": {
+          "proposalId": {
+            "title": "Proposalid",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "proposalId",
+          "reason"
+        ],
+        "title": "ApplyConflict",
+        "type": "object"
+      },
+      "ApplyFeedbackRequest": {
+        "additionalProperties": false,
+        "description": "Body for `POST /workspaces/{id}/cv/{cvId}/apply` \u2014 the accepted **bullet**-anchored threads\nto apply as Corrector rewrites. (Named `ApplyFeedbackRequest`; `ApplyRequest` is the tracker's\njob-application action.) `baseVersion` is the CV version the client was viewing \u2014 the (billed)\ncorrection is rejected 409 if the stored CV changed since, like the edit/review/export guard.",
+        "properties": {
+          "baseVersion": {
+            "minimum": 1.0,
+            "title": "Baseversion",
+            "type": "integer"
+          },
+          "threads": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/AcceptedThread"
+            },
+            "title": "Threads",
+            "type": "array"
+          }
+        },
+        "required": [
+          "baseVersion"
+        ],
+        "title": "ApplyFeedbackRequest",
+        "type": "object"
+      },
+      "ApplyRequest": {
+        "additionalProperties": false,
+        "description": "Body for `POST /workspaces/{id}/applications` \u2014 lock a finished CV against a job.\n\nOnly the CV id + display/tracking metadata cross the wire; the server re-reads the CV, re-checks\nthe sign-off gate, and resolves the title (this request, else the CV's `cv_labels` title \u2014 so a\nkeyless draft, which has no label, must supply one here, else 422). `base_version` is the CV\nversion the client was viewing \u2014 a stale apply is rejected (409 `stale`).",
+        "properties": {
+          "baseVersion": {
+            "minimum": 1.0,
+            "title": "Baseversion",
+            "type": "integer"
+          },
+          "company": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company"
+          },
+          "cvId": {
+            "title": "Cvid",
+            "type": "string"
+          },
+          "jobTitle": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Jobtitle"
+          },
+          "jobUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Joburl"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "required": [
+          "cvId",
+          "baseVersion"
+        ],
+        "title": "ApplyRequest",
+        "type": "object"
+      },
+      "ApplyResult": {
+        "additionalProperties": false,
+        "description": "Result of applying the accepted proposals: how many landed, what was skipped, and the master\nas persisted.",
+        "properties": {
+          "appliedCount": {
+            "title": "Appliedcount",
+            "type": "integer"
+          },
+          "conflicts": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ApplyConflict"
+            },
+            "title": "Conflicts",
+            "type": "array"
+          },
+          "master": {
+            "$ref": "#/components/schemas/MasterProfile"
+          }
+        },
+        "required": [
+          "appliedCount",
+          "master"
+        ],
+        "title": "ApplyResult",
+        "type": "object"
+      },
+      "AuthUser": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "role": {
+            "const": "owner",
+            "default": "owner",
+            "deprecated": true,
+            "description": "Vestigial \u2014 always 'owner'; removed next release",
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "title": "AuthUser",
+        "type": "object"
+      },
+      "Basics": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "minLength": 1,
+            "title": "Email",
+            "type": "string"
+          },
+          "label": {
+            "default": "",
+            "title": "Label",
+            "type": "string"
+          },
+          "location": {
+            "$ref": "#/components/schemas/Location",
+            "default": {
+              "city": "",
+              "countryCode": "",
+              "region": ""
+            }
+          },
+          "name": {
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "phone": {
+            "default": "",
+            "title": "Phone",
+            "type": "string"
+          },
+          "profiles": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ProfileLink"
+            },
+            "title": "Profiles",
+            "type": "array"
+          },
+          "summary": {
+            "default": "",
+            "title": "Summary",
+            "type": "string"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "name",
+          "email"
+        ],
+        "title": "Basics",
+        "type": "object"
+      },
+      "Body_start_ingest_file_workspaces__workspace_id__ingest_file_post": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          },
+          "sourceType": {
+            "$ref": "#/components/schemas/IngestSourceType",
+            "default": "cv-pdf"
+          }
+        },
+        "required": [
+          "file"
+        ],
+        "title": "Body_start_ingest_file_workspaces__workspace_id__ingest_file_post",
+        "type": "object"
+      },
+      "BulkDecideItem": {
+        "additionalProperties": false,
+        "properties": {
+          "baseVersion": {
+            "title": "Baseversion",
+            "type": "integer"
+          },
+          "proposalId": {
+            "title": "Proposalid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "proposalId",
+          "baseVersion"
+        ],
+        "title": "BulkDecideItem",
+        "type": "object"
+      },
+      "BulkDecideRequest": {
+        "additionalProperties": false,
+        "description": "Bulk accept/decline. Per-item `baseVersion` keeps the single path's optimistic-lock guarantee\n(stale items \u2192 reported, not silently clobbered). The server re-derives which proposals are\neligible from stored state \u2014 the client's list never widens the gate (invariant 2).",
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/ProposalAction"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BulkDecideItem"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items",
+          "action"
+        ],
+        "title": "BulkDecideRequest",
+        "type": "object"
+      },
+      "Certificate": {
+        "additionalProperties": false,
+        "properties": {
+          "date": {
+            "title": "Date",
+            "type": "string"
+          },
+          "issuer": {
+            "title": "Issuer",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "issuer",
+          "date"
+        ],
+        "title": "Certificate",
+        "type": "object"
+      },
+      "ConflictCode": {
+        "description": "Machine-distinguishable 409 reason on the apply / CV-mutation paths, so the client branches\non a code rather than fragile prose. (The needs-sign-off 409 stays `ExportBlocked`, which\nalready carries `blockedBulletIds`.)",
+        "enum": [
+          "stale",
+          "alreadyApplied",
+          "cvLocked"
+        ],
+        "title": "ConflictCode",
+        "type": "string"
+      },
+      "CreatedCV": {
+        "additionalProperties": false,
+        "description": "Result of persisting a tailored CV: its server-generated id + the derived CV.",
+        "properties": {
+          "cv": {
+            "$ref": "#/components/schemas/TailoredCV"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "cv"
+        ],
+        "title": "CreatedCV",
+        "type": "object"
+      },
+      "CvSummary": {
+        "additionalProperties": false,
+        "description": "A lightweight row for the dashboard CV list \u2014 enough to label, badge, and open a CV without\nshipping the whole `{master, cv}` bundle. `needsSignoff` is derived from the CV; `jobTitle` /\n`company` come from the separate `cv_labels` row (None for a keyless draft). The timestamps are\nthe stored-row times, not anything inside `cv`.",
+        "properties": {
+          "company": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "jobTitle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Jobtitle"
+          },
+          "needsSignoff": {
+            "title": "Needssignoff",
+            "type": "boolean"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "title": "Updatedat",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "version",
+          "needsSignoff",
+          "summary",
+          "createdAt",
+          "updatedAt"
+        ],
+        "title": "CvSummary",
+        "type": "object"
+      },
+      "DecideProposalRequest": {
+        "additionalProperties": false,
+        "description": "Accept / decline / edit one proposal. `edited` (a replacement `ProposalContent`) is honoured\non `accept` and `edit`; `baseVersion` is the proposal version the client was viewing \u2014 a stale\nwrite is a 409 (optimistic lock), so a stale tab can't admit content it never saw.",
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/ProposalAction"
+          },
+          "baseVersion": {
+            "title": "Baseversion",
+            "type": "integer"
+          },
+          "edited": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProposalContent"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "action",
+          "baseVersion"
+        ],
+        "title": "DecideProposalRequest",
+        "type": "object"
+      },
+      "Decision": {
+        "enum": [
+          "pass",
+          "borderline",
+          "reject"
+        ],
+        "title": "Decision",
+        "type": "string"
+      },
+      "EditBulletRequest": {
+        "additionalProperties": false,
+        "description": "Body for `POST /workspaces/{id}/cv/{cvId}/edit` \u2014 a manual text edit of one tailored bullet.\nThe server owns provenance (invariant 2): only the bullet text is client-supplied; `origin` /\n`sourceId` / `needsSignoff` are re-derived server-side. Text is trimmed + bounded, so a blank or\nwhitespace-only edit is a 422. `baseVersion` is the CV version the client was editing \u2014 a write\nagainst a stale version is rejected (409) rather than silently clobbering a newer one.",
+        "properties": {
+          "baseVersion": {
+            "minimum": 1.0,
+            "title": "Baseversion",
+            "type": "integer"
+          },
+          "bulletId": {
+            "minLength": 1,
+            "title": "Bulletid",
+            "type": "string"
+          },
+          "text": {
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "bulletId",
+          "text",
+          "baseVersion"
+        ],
+        "title": "EditBulletRequest",
+        "type": "object"
+      },
+      "EditorReport": {
+        "additionalProperties": false,
+        "description": "Editor agent (OpenAI) \u2014 line-edit critique. Critique only, never rewrites.",
+        "properties": {
+          "overall": {
+            "title": "Overall",
+            "type": "string"
+          },
+          "threads": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Thread"
+            },
+            "title": "Threads",
+            "type": "array"
+          }
+        },
+        "required": [
+          "overall"
+        ],
+        "title": "EditorReport",
+        "type": "object"
+      },
+      "EducationEntry": {
+        "additionalProperties": false,
+        "properties": {
+          "area": {
+            "title": "Area",
+            "type": "string"
+          },
+          "endDate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enddate"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "institution": {
+            "title": "Institution",
+            "type": "string"
+          },
+          "startDate": {
+            "title": "Startdate",
+            "type": "string"
+          },
+          "studyType": {
+            "title": "Studytype",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "institution",
+          "area",
+          "studyType",
+          "startDate"
+        ],
+        "title": "EducationEntry",
+        "type": "object"
+      },
+      "Evidence": {
+        "additionalProperties": false,
+        "description": "The verbatim source span supporting a proposal, so the owner can trust what enters the\nmaster. `verified` is True when the server confirmed the snippet appears in the source\ndocument (best-effort substring check); a non-verbatim snippet is flagged, never gates apply.",
+        "properties": {
+          "snippet": {
+            "title": "Snippet",
+            "type": "string"
+          },
+          "verified": {
+            "default": false,
+            "title": "Verified",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "snippet"
+        ],
+        "title": "Evidence",
+        "type": "object"
+      },
+      "ExportBlocked": {
+        "additionalProperties": false,
+        "description": "409 body when export is gated: the bullets still awaiting sign-off (invariant 2).",
+        "properties": {
+          "blockedBulletIds": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Blockedbulletids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "blockedBulletIds"
+        ],
+        "title": "ExportBlocked",
+        "type": "object"
+      },
+      "ExtractedCertificate": {
+        "additionalProperties": false,
+        "description": "LEGACY (DevPR31): ingestion no longer extracts or proposes certificates \u2014 none of the four\nrender outputs nor the master editor shows them, so accepting one sent data into a black hole.\nThe shape stays because persisted pre-DevPR31 proposals carry it (`ProposalContent.certificate`)\nand open runs in prod must still render/apply.",
+        "properties": {
+          "date": {
+            "title": "Date",
+            "type": "string"
+          },
+          "evidence": {
+            "default": "",
+            "title": "Evidence",
+            "type": "string"
+          },
+          "issuer": {
+            "title": "Issuer",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "issuer",
+          "date"
+        ],
+        "title": "ExtractedCertificate",
+        "type": "object"
+      },
+      "ExtractedEducation": {
+        "additionalProperties": false,
+        "properties": {
+          "area": {
+            "title": "Area",
+            "type": "string"
+          },
+          "endDate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enddate"
+          },
+          "evidence": {
+            "default": "",
+            "title": "Evidence",
+            "type": "string"
+          },
+          "institution": {
+            "title": "Institution",
+            "type": "string"
+          },
+          "startDate": {
+            "title": "Startdate",
+            "type": "string"
+          },
+          "studyType": {
+            "title": "Studytype",
+            "type": "string"
+          }
+        },
+        "required": [
+          "institution",
+          "area",
+          "studyType",
+          "startDate"
+        ],
+        "title": "ExtractedEducation",
+        "type": "object"
+      },
+      "ExtractedLanguage": {
+        "additionalProperties": false,
+        "description": "A spoken/written language the document states, with fluency when given. Small +\nlow-optionality (one optional scalar) so folding it into the qualifications Extractor call\ndoesn't blow the structured-output grammar budget (see agents/extractor.py).",
+        "properties": {
+          "evidence": {
+            "default": "",
+            "title": "Evidence",
+            "type": "string"
+          },
+          "fluency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fluency"
+          },
+          "language": {
+            "title": "Language",
+            "type": "string"
+          }
+        },
+        "required": [
+          "language"
+        ],
+        "title": "ExtractedLanguage",
+        "type": "object"
+      },
+      "ExtractedProfileLink": {
+        "additionalProperties": false,
+        "properties": {
+          "network": {
+            "title": "Network",
+            "type": "string"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "network",
+          "url"
+        ],
+        "title": "ExtractedProfileLink",
+        "type": "object"
+      },
+      "ExtractedSkill": {
+        "additionalProperties": false,
+        "properties": {
+          "evidence": {
+            "default": "",
+            "title": "Evidence",
+            "type": "string"
+          },
+          "keywords": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Keywords",
+            "type": "array"
+          },
+          "level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Level"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "ExtractedSkill",
+        "type": "object"
+      },
+      "ExtractedWork": {
+        "additionalProperties": false,
+        "properties": {
+          "company": {
+            "title": "Company",
+            "type": "string"
+          },
+          "endDate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enddate"
+          },
+          "evidence": {
+            "default": "",
+            "title": "Evidence",
+            "type": "string"
+          },
+          "highlights": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Highlights",
+            "type": "array"
+          },
+          "position": {
+            "title": "Position",
+            "type": "string"
+          },
+          "startDate": {
+            "title": "Startdate",
+            "type": "string"
+          },
+          "tags": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Tags",
+            "type": "array"
+          }
+        },
+        "required": [
+          "company",
+          "position",
+          "startDate"
+        ],
+        "title": "ExtractedWork",
+        "type": "object"
+      },
+      "FactCheckReport": {
+        "additionalProperties": false,
+        "description": "Fact-Checker (OpenAI) \u2014 every claim must trace to a master bullet.",
+        "properties": {
+          "threads": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/FactCheckThread"
+            },
+            "title": "Threads",
+            "type": "array"
+          }
+        },
+        "title": "FactCheckReport",
+        "type": "object"
+      },
+      "FactCheckThread": {
+        "additionalProperties": false,
+        "properties": {
+          "anchorId": {
+            "title": "Anchorid",
+            "type": "string"
+          },
+          "anchorKind": {
+            "$ref": "#/components/schemas/AnchorKind",
+            "default": "bullet"
+          },
+          "claim": {
+            "title": "Claim",
+            "type": "string"
+          },
+          "comment": {
+            "title": "Comment",
+            "type": "string"
+          },
+          "severity": {
+            "$ref": "#/components/schemas/Severity"
+          },
+          "sourceId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sourceid"
+          },
+          "suggestedRevision": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestedrevision"
+          },
+          "verdict": {
+            "$ref": "#/components/schemas/FactVerdict"
+          }
+        },
+        "required": [
+          "anchorId",
+          "severity",
+          "comment",
+          "claim",
+          "verdict",
+          "sourceId"
+        ],
+        "title": "FactCheckThread",
+        "type": "object"
+      },
+      "FactVerdict": {
+        "enum": [
+          "supported",
+          "unsupported",
+          "overstated"
+        ],
+        "title": "FactVerdict",
+        "type": "string"
+      },
+      "GatekeeperVerdict": {
+        "additionalProperties": false,
+        "description": "Gatekeeper (OpenAI) \u2014 simulates the recruiter / ATS first-pass screen for THIS posting.",
+        "properties": {
+          "atsMatchScore": {
+            "title": "Atsmatchscore",
+            "type": "integer"
+          },
+          "decision": {
+            "$ref": "#/components/schemas/Decision"
+          },
+          "missingKeywords": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Missingkeywords",
+            "type": "array"
+          },
+          "recruiterNotes": {
+            "title": "Recruiternotes",
+            "type": "string"
+          },
+          "threads": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Thread"
+            },
+            "title": "Threads",
+            "type": "array"
+          },
+          "unmetMustHaves": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Unmetmusthaves",
+            "type": "array"
+          }
+        },
+        "required": [
+          "decision",
+          "atsMatchScore",
+          "recruiterNotes"
+        ],
+        "title": "GatekeeperVerdict",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "Health": {
+        "additionalProperties": false,
+        "properties": {
+          "service": {
+            "title": "Service",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "service"
+        ],
+        "title": "Health",
+        "type": "object"
+      },
+      "Highlight": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "text"
+        ],
+        "title": "Highlight",
+        "type": "object"
+      },
+      "IngestRelationship": {
+        "description": "How a proposal relates to the CURRENT master \u2014 **server-derived after re-grounding, never a\nmodel output**. `net_new` adds a unit the master lacks; `enrich` appends a new highlight to an\nexisting work entry (`targetWorkId`); `correction` overwrites an already-set basics field\n(`currentValue` shows what it replaces). Only `net_new` is bulk-acceptable \u2014 enrich/correction\nneed a deliberate per-item accept (invariant 2).",
+        "enum": [
+          "net-new",
+          "enrich",
+          "correction"
+        ],
+        "title": "IngestRelationship",
+        "type": "string"
+      },
+      "IngestRunStatus": {
+        "description": "Lifecycle of one ingestion run. `extracting`/`reconciling` are the non-terminal (open) states\nthe one-open-run guard and the reaper key on; `review` is ready for the owner;\n`applied`/`failed`/`discarded` are terminal.",
+        "enum": [
+          "extracting",
+          "reconciling",
+          "review",
+          "applied",
+          "failed",
+          "discarded"
+        ],
+        "title": "IngestRunStatus",
+        "type": "string"
+      },
+      "IngestSourceType": {
+        "description": "Where the ingested document came from (display + future per-source handling).",
+        "enum": [
+          "pasted",
+          "linkedin-pdf",
+          "cv-pdf",
+          "other"
+        ],
+        "title": "IngestSourceType",
+        "type": "string"
+      },
+      "IngestUnitKind": {
+        "description": "What a proposal would add to the master. `highlight` enriches an existing work entry with one\nnew bullet (PR-E); the rest build a whole unit net-new (PR-B1), and a `basics-field` may instead\nbe a `correction` of an already-set field (carried by `relationship`, PR-E). `certificate` is\nLEGACY: no new certificate proposals are built (DevPR31), but persisted pre-DevPR31 runs still\ncarry them, and review/apply must keep honouring those.",
+        "enum": [
+          "basics-field",
+          "work",
+          "education",
+          "skill",
+          "certificate",
+          "profile",
+          "language",
+          "highlight"
+        ],
+        "title": "IngestUnitKind",
+        "type": "string"
+      },
+      "IngestVerdict": {
+        "description": "The Judge's advisory recommendation per proposal (OpenAI adjudication \u2014 PR-E E2). Advisory\nONLY: it never gates apply nor widens the bulk gate. An omitted/unknown proposalId, or a Judge\noutage, maps to `needs_review`.",
+        "enum": [
+          "include",
+          "exclude",
+          "needs-review"
+        ],
+        "title": "IngestVerdict",
+        "type": "string"
+      },
+      "IngestionProposal": {
+        "additionalProperties": false,
+        "description": "One reviewable change, anchored to a stable server-minted `proposalId` (invariant 7).\n\n`version` is the optimistic-lock token a decide call echoes as `baseVersion`. `appliedMasterId`\nrecords the master id minted when an accepted proposal was applied. The reconciliation envelope\n(`relationship` / `targetWorkId` / `targetLabel` / `currentValue` / `decision`) is\n**server-owned and immutable** \u2014 `edited` carries only owner content edits, so an owner can\nnever re-target an enrich or correction (invariant 2). All five default, so pre-PR-E stored\npayloads load unchanged.",
+        "properties": {
+          "appliedMasterId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Appliedmasterid"
+          },
+          "content": {
+            "$ref": "#/components/schemas/ProposalContent"
+          },
+          "currentValue": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currentvalue"
+          },
+          "decision": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProposalDecision"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "edited": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProposalContent"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "evidence": {
+            "$ref": "#/components/schemas/Evidence"
+          },
+          "proposalId": {
+            "title": "Proposalid",
+            "type": "string"
+          },
+          "relationship": {
+            "$ref": "#/components/schemas/IngestRelationship",
+            "default": "net-new"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ProposalStatus"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "targetLabel": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Targetlabel"
+          },
+          "targetWorkId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Targetworkid"
+          },
+          "unitKind": {
+            "$ref": "#/components/schemas/IngestUnitKind"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "proposalId",
+          "unitKind",
+          "summary",
+          "content",
+          "evidence",
+          "status",
+          "version"
+        ],
+        "title": "IngestionProposal",
+        "type": "object"
+      },
+      "IngestionRun": {
+        "additionalProperties": false,
+        "description": "One ingestion of one document. `failureKind`/`failureReason` are set when a run ends\n`failed`, so a recovered/listed run is self-describing (refusal vs truncation vs down).",
+        "properties": {
+          "createdAt": {
+            "format": "date-time",
+            "title": "Createdat",
+            "type": "string"
+          },
+          "failureKind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failurekind"
+          },
+          "failureReason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failurereason"
+          },
+          "filename": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filename"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "sourceType": {
+            "$ref": "#/components/schemas/IngestSourceType"
+          },
+          "status": {
+            "$ref": "#/components/schemas/IngestRunStatus"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "title": "Updatedat",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "sourceType",
+          "status",
+          "createdAt",
+          "updatedAt"
+        ],
+        "title": "IngestionRun",
+        "type": "object"
+      },
+      "IngestionRunBundle": {
+        "additionalProperties": false,
+        "description": "The reload-safe, deep-linkable read backing `/ingest?run=<id>`: the run + its proposals.",
+        "properties": {
+          "proposals": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/IngestionProposal"
+            },
+            "title": "Proposals",
+            "type": "array"
+          },
+          "run": {
+            "$ref": "#/components/schemas/IngestionRun"
+          }
+        },
+        "required": [
+          "run"
+        ],
+        "title": "IngestionRunBundle",
+        "type": "object"
+      },
+      "JobSpec": {
+        "additionalProperties": false,
+        "description": "The wire + persisted posting: parsed fields PLUS owner-supplied additions. `postingUrl` is\nowner-supplied (the new-application modal) \u2014 NOT on `ParsedJobSpec`, so the Parser can't produce\nit. Optional + defaulted so legacy `cv_job_specs` blobs (pre-field) still validate.",
+        "properties": {
+          "atsKeywords": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Atskeywords",
+            "type": "array"
+          },
+          "company": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company"
+          },
+          "mustHaves": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Musthaves",
+            "type": "array"
+          },
+          "niceToHaves": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Nicetohaves",
+            "type": "array"
+          },
+          "postingUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Postingurl"
+          },
+          "rawText": {
+            "title": "Rawtext",
+            "type": "string"
+          },
+          "redFlags": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Redflags",
+            "type": "array"
+          },
+          "seniority": {
+            "$ref": "#/components/schemas/Seniority"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "tone": {
+            "$ref": "#/components/schemas/Tone"
+          }
+        },
+        "required": [
+          "rawText",
+          "title",
+          "seniority",
+          "tone"
+        ],
+        "title": "JobSpec",
+        "type": "object"
+      },
+      "Language": {
+        "additionalProperties": false,
+        "properties": {
+          "fluency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fluency"
+          },
+          "language": {
+            "title": "Language",
+            "type": "string"
+          }
+        },
+        "required": [
+          "language"
+        ],
+        "title": "Language",
+        "type": "object"
+      },
+      "Location": {
+        "additionalProperties": false,
+        "properties": {
+          "city": {
+            "default": "",
+            "title": "City",
+            "type": "string"
+          },
+          "countryCode": {
+            "default": "",
+            "title": "Countrycode",
+            "type": "string"
+          },
+          "region": {
+            "default": "",
+            "title": "Region",
+            "type": "string"
+          }
+        },
+        "title": "Location",
+        "type": "object"
+      },
+      "MagicRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "title": "Email",
+            "type": "string"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "title": "MagicRequest",
+        "type": "object"
+      },
+      "MasterProfile": {
+        "additionalProperties": false,
+        "properties": {
+          "basics": {
+            "$ref": "#/components/schemas/Basics"
+          },
+          "certificates": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/Certificate"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Certificates"
+          },
+          "education": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/EducationEntry"
+            },
+            "title": "Education",
+            "type": "array"
+          },
+          "languages": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Language"
+            },
+            "title": "Languages",
+            "type": "array"
+          },
+          "schemaVersion": {
+            "title": "Schemaversion",
+            "type": "string"
+          },
+          "skills": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Skill"
+            },
+            "title": "Skills",
+            "type": "array"
+          },
+          "work": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/WorkEntry"
+            },
+            "title": "Work",
+            "type": "array"
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "basics"
+        ],
+        "title": "MasterProfile",
+        "type": "object"
+      },
+      "Membership": {
+        "additionalProperties": false,
+        "description": "A user's access to one workspace. Absence of a row == no access (deny-by-default).",
+        "properties": {
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "workspaceId": {
+            "title": "Workspaceid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspaceId",
+          "email"
+        ],
+        "title": "Membership",
+        "type": "object"
+      },
+      "OkResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "ok": {
+            "default": true,
+            "title": "Ok",
+            "type": "boolean"
+          }
+        },
+        "title": "OkResponse",
+        "type": "object"
+      },
+      "Origin": {
+        "description": "Provenance of a tailored bullet \u2014 net-new always requires sign-off (invariant 2).",
+        "enum": [
+          "verbatim",
+          "reworded",
+          "net-new"
+        ],
+        "title": "Origin",
+        "type": "string"
+      },
+      "ParseRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "rawText": {
+            "title": "Rawtext",
+            "type": "string"
+          }
+        },
+        "required": [
+          "rawText"
+        ],
+        "title": "ParseRequest",
+        "type": "object"
+      },
+      "PasteIngestRequest": {
+        "additionalProperties": false,
+        "description": "Body for `POST /workspaces/{id}/ingest` (PR-B1, text path): the pasted CV / LinkedIn text.",
+        "properties": {
+          "sourceType": {
+            "$ref": "#/components/schemas/IngestSourceType",
+            "default": "pasted"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "PasteIngestRequest",
+        "type": "object"
+      },
+      "ProfileLink": {
+        "additionalProperties": false,
+        "properties": {
+          "network": {
+            "title": "Network",
+            "type": "string"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "network",
+          "url"
+        ],
+        "title": "ProfileLink",
+        "type": "object"
+      },
+      "ProposalAction": {
+        "enum": [
+          "accept",
+          "decline",
+          "edit"
+        ],
+        "title": "ProposalAction",
+        "type": "string"
+      },
+      "ProposalContent": {
+        "additionalProperties": false,
+        "description": "The proposed master fragment. Exactly one sub-field is set, matching `unitKind` (enforced\nserver-side): `field` for a basics-field add or correction, `highlight` for an enrich, and\nwork/education/skill/cert reuse the id-less Extracted shapes for a whole net-new unit.",
+        "properties": {
+          "certificate": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExtractedCertificate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "education": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExtractedEducation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "field": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProposedField"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "highlight": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProposedHighlight"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "language": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExtractedLanguage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExtractedProfileLink"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "skill": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExtractedSkill"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "work": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExtractedWork"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "ProposalContent",
+        "type": "object"
+      },
+      "ProposalDecision": {
+        "additionalProperties": false,
+        "description": "The Judge's advisory verdict carried on a proposal (PR-E E2) \u2014 server-built from the Judge's\nstructured output, never client-set. Advisory only (invariant 6).",
+        "properties": {
+          "reason": {
+            "default": "",
+            "title": "Reason",
+            "type": "string"
+          },
+          "verdict": {
+            "$ref": "#/components/schemas/IngestVerdict"
+          }
+        },
+        "required": [
+          "verdict"
+        ],
+        "title": "ProposalDecision",
+        "type": "object"
+      },
+      "ProposalStatus": {
+        "enum": [
+          "pending",
+          "accepted",
+          "declined"
+        ],
+        "title": "ProposalStatus",
+        "type": "string"
+      },
+      "ProposedField": {
+        "additionalProperties": false,
+        "description": "A single basics/identity field. `fieldPath` is a wire path validated server-side against a\ntyped allowlist (e.g. `basics.name`, `basics.location.countryCode`); `value` is the proposed\ntext.",
+        "properties": {
+          "fieldPath": {
+            "title": "Fieldpath",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "fieldPath",
+          "value"
+        ],
+        "title": "ProposedField",
+        "type": "object"
+      },
+      "ProposedHighlight": {
+        "additionalProperties": false,
+        "description": "The proposed new bullet for an `enrich` proposal \u2014 text only. The target work entry is the\nserver-owned `targetWorkId`/`targetLabel` on the proposal envelope, so an owner edits the bullet\ntext but can never re-point the merge to a different role (invariant 2).",
+        "properties": {
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "ProposedHighlight",
+        "type": "object"
+      },
+      "Provider": {
+        "enum": [
+          "anthropic",
+          "openai"
+        ],
+        "title": "Provider",
+        "type": "string"
+      },
+      "ProviderKeyStatus": {
+        "additionalProperties": false,
+        "description": "Masked key status \u2014 never the secret itself.",
+        "properties": {
+          "isSet": {
+            "title": "Isset",
+            "type": "boolean"
+          },
+          "last4": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last4"
+          },
+          "provider": {
+            "$ref": "#/components/schemas/Provider"
+          },
+          "updatedAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updatedat"
+          }
+        },
+        "required": [
+          "provider",
+          "isSet"
+        ],
+        "title": "ProviderKeyStatus",
+        "type": "object"
+      },
+      "ProviderModelStatus": {
+        "additionalProperties": false,
+        "description": "Cached available models + the per-tier assignments for one provider.",
+        "properties": {
+          "availableModels": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Availablemodels",
+            "type": "array"
+          },
+          "provider": {
+            "$ref": "#/components/schemas/Provider"
+          },
+          "syncedAt": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Syncedat"
+          },
+          "tierCheap": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tiercheap"
+          },
+          "tierFast": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tierfast"
+          },
+          "tierStrong": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tierstrong"
+          }
+        },
+        "required": [
+          "provider"
+        ],
+        "title": "ProviderModelStatus",
+        "type": "object"
+      },
+      "RecruiterUpdateRequest": {
+        "additionalProperties": false,
+        "description": "Body for `PATCH \u2026/applications/{id}/recruiter` \u2014 sets the WHOLE recruiter contact (a full\nreplace). Both keys are **required** (`Field(...)`) but nullable, so an *omitted* key is a 422\nrather than a silent clear; send `null`/`\"\"` to clear a field. A non-empty email must look like\none (coarse `_RECRUITER_EMAIL_RE`) \u2192 422; the name is free-form.",
+        "properties": {
+          "recruiterEmail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recruiteremail"
+          },
+          "recruiterName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recruitername"
+          }
+        },
+        "required": [
+          "recruiterName",
+          "recruiterEmail"
+        ],
+        "title": "RecruiterUpdateRequest",
+        "type": "object"
+      },
+      "RenderBundle": {
+        "additionalProperties": false,
+        "description": "The `{master, cv}` the renderer needs (dates/company resolve off master), plus the stored\n`jobSpec` this CV was tailored to (None for a keyless draft). The client uses `jobSpec` for the\nposting drawer + Gatekeeper present/met derivation \u2014 NOT a render/provenance input (invariant 2;\nthe renderer ignores it).",
+        "properties": {
+          "cv": {
+            "$ref": "#/components/schemas/TailoredCV"
+          },
+          "jobSpec": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JobSpec"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "master": {
+            "$ref": "#/components/schemas/MasterProfile"
+          }
+        },
+        "required": [
+          "master",
+          "cv",
+          "jobSpec"
+        ],
+        "title": "RenderBundle",
+        "type": "object"
+      },
+      "ReviewBundle": {
+        "additionalProperties": false,
+        "description": "The aggregate review result for one CV \u2014 each of the four advisory reports, optional. A null\nreport means that agent didn't apply (N/A for this CV, e.g. a keyless / no-job draft has no\nposting so `gatekeeper`/`editor` stay null); an agent that ran and degraded is listed in\n`failures` instead. Nothing here gates export; only the sign-off gate does.\n\n`cvVersion` is the EXACT version of the CV the server reviewed (the row it loaded), so the\nclient can tell whether the review still matches the CV on screen: a save since the review\n(or a concurrent edit in another tab) bumps the version, and the mismatch marks the review\nversion-drifted \u2014 a presentation signal only (ADR 0016): its surfaces stay visible,\nstale-marked, never hidden.",
+        "properties": {
+          "cvVersion": {
+            "title": "Cvversion",
+            "type": "integer"
+          },
+          "editor": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EditorReport"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "factCheck": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FactCheckReport"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "failures": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/AgentFailure"
+            },
+            "title": "Failures",
+            "type": "array"
+          },
+          "gatekeeper": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GatekeeperVerdict"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resolvedAnchorIds": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Resolvedanchorids",
+            "type": "array"
+          },
+          "slop": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SlopReport"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "cvVersion"
+        ],
+        "title": "ReviewBundle",
+        "type": "object"
+      },
+      "ReviewDecisionsRequest": {
+        "additionalProperties": false,
+        "description": "Body for `PUT .../cv/{id}/review/decisions` \u2014 the client's WHOLE per-finding decisions\nsnapshot (last-write-wins, invariant 7) plus the `cvVersion` it was viewing. The server rejects\na mismatch against the stored review's version with **409** (the review was re-run since).\nBounded (\u2192 **422**): at most 512 entries, each key at most 512 chars.",
+        "properties": {
+          "cvVersion": {
+            "title": "Cvversion",
+            "type": "integer"
+          },
+          "decisions": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ThreadDecision"
+            },
+            "title": "Decisions",
+            "type": "object"
+          }
+        },
+        "required": [
+          "decisions",
+          "cvVersion"
+        ],
+        "title": "ReviewDecisionsRequest",
+        "type": "object"
+      },
+      "ReviewRequest": {
+        "additionalProperties": false,
+        "description": "Body for `POST /workspaces/{id}/cv/{cvId}/review`. `baseVersion` is the CV version the client\nis viewing: the (billed) review is rejected (409) if the stored CV changed since, so a stale tab\nnever pays for a verdict of a row it isn't showing (matches the export/apply guard).",
+        "properties": {
+          "baseVersion": {
+            "minimum": 1.0,
+            "title": "Baseversion",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "baseVersion"
+        ],
+        "title": "ReviewRequest",
+        "type": "object"
+      },
+      "RunDone": {
+        "additionalProperties": false,
+        "properties": {
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "resultRef": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resultref"
+          },
+          "type": {
+            "const": "run_done",
+            "default": "run_done",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ok"
+        ],
+        "title": "RunDone",
+        "type": "object"
+      },
+      "SavedReview": {
+        "additionalProperties": false,
+        "description": "The persisted latest review run for one CV (ADR 0013) \u2014 what `GET .../cv/{id}/review` returns\nwhen a run is stored (200-null when none is). `bundle` is the exact `ReviewBundle` that was\nreviewed; `reviewedText` maps `bulletId -> text` at review time (server-derived); `decisions`\nmaps an opaque client `threadKey -> accepted|rejected` (last-write-wins, invariant 7).\n`updatedAt` is the stored-row time.",
+        "properties": {
+          "bundle": {
+            "$ref": "#/components/schemas/ReviewBundle"
+          },
+          "cvId": {
+            "title": "Cvid",
+            "type": "string"
+          },
+          "decisions": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ThreadDecision"
+            },
+            "title": "Decisions",
+            "type": "object"
+          },
+          "reviewedText": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Reviewedtext",
+            "type": "object"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "title": "Updatedat",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cvId",
+          "bundle",
+          "reviewedText",
+          "decisions",
+          "updatedAt"
+        ],
+        "title": "SavedReview",
+        "type": "object"
+      },
+      "SchemaBundle": {
+        "additionalProperties": false,
+        "description": "Not a runtime payload \u2014 a codegen anchor that pins every model into the OpenAPI document.",
+        "properties": {
+          "adminStatus": {
+            "$ref": "#/components/schemas/AdminStatus"
+          },
+          "agentDone": {
+            "$ref": "#/components/schemas/AgentDone"
+          },
+          "agentFailure": {
+            "$ref": "#/components/schemas/AgentFailure"
+          },
+          "agentProgress": {
+            "$ref": "#/components/schemas/AgentProgress"
+          },
+          "agentReport": {
+            "$ref": "#/components/schemas/AgentReport"
+          },
+          "agentStarted": {
+            "$ref": "#/components/schemas/AgentStarted"
+          },
+          "application": {
+            "$ref": "#/components/schemas/Application"
+          },
+          "applyFeedbackRequest": {
+            "$ref": "#/components/schemas/ApplyFeedbackRequest"
+          },
+          "editorReport": {
+            "$ref": "#/components/schemas/EditorReport"
+          },
+          "factCheckReport": {
+            "$ref": "#/components/schemas/FactCheckReport"
+          },
+          "gatekeeperVerdict": {
+            "$ref": "#/components/schemas/GatekeeperVerdict"
+          },
+          "jobSpec": {
+            "$ref": "#/components/schemas/JobSpec"
+          },
+          "masterProfile": {
+            "$ref": "#/components/schemas/MasterProfile"
+          },
+          "membership": {
+            "$ref": "#/components/schemas/Membership"
+          },
+          "providerKeyStatus": {
+            "$ref": "#/components/schemas/ProviderKeyStatus"
+          },
+          "providerModelStatus": {
+            "$ref": "#/components/schemas/ProviderModelStatus"
+          },
+          "reviewBundle": {
+            "$ref": "#/components/schemas/ReviewBundle"
+          },
+          "reviewRequest": {
+            "$ref": "#/components/schemas/ReviewRequest"
+          },
+          "runDone": {
+            "$ref": "#/components/schemas/RunDone"
+          },
+          "slopReport": {
+            "$ref": "#/components/schemas/SlopReport"
+          },
+          "syncModelsResponse": {
+            "$ref": "#/components/schemas/SyncModelsResponse"
+          },
+          "tailoredCv": {
+            "$ref": "#/components/schemas/TailoredCV"
+          },
+          "thread": {
+            "$ref": "#/components/schemas/Thread"
+          },
+          "workspace": {
+            "$ref": "#/components/schemas/Workspace"
+          }
+        },
+        "required": [
+          "masterProfile",
+          "jobSpec",
+          "tailoredCv",
+          "editorReport",
+          "factCheckReport",
+          "slopReport",
+          "gatekeeperVerdict",
+          "reviewBundle",
+          "reviewRequest",
+          "applyFeedbackRequest",
+          "thread",
+          "application",
+          "workspace",
+          "membership",
+          "agentStarted",
+          "agentProgress",
+          "agentDone",
+          "agentReport",
+          "agentFailure",
+          "runDone",
+          "adminStatus",
+          "providerKeyStatus",
+          "providerModelStatus",
+          "syncModelsResponse"
+        ],
+        "title": "SchemaBundle",
+        "type": "object"
+      },
+      "SectionType": {
+        "enum": [
+          "work",
+          "projects",
+          "skills",
+          "education"
+        ],
+        "title": "SectionType",
+        "type": "string"
+      },
+      "Seniority": {
+        "enum": [
+          "junior",
+          "mid",
+          "senior",
+          "lead",
+          "principal",
+          "manager"
+        ],
+        "title": "Seniority",
+        "type": "string"
+      },
+      "SetProviderKeyRequest": {
+        "additionalProperties": false,
+        "description": "Write-only: the raw API key. Validated by listing models before it is stored.",
+        "properties": {
+          "apiKey": {
+            "title": "Apikey",
+            "type": "string"
+          }
+        },
+        "required": [
+          "apiKey"
+        ],
+        "title": "SetProviderKeyRequest",
+        "type": "object"
+      },
+      "SetTiersRequest": {
+        "additionalProperties": false,
+        "description": "Assign a real model id to each tier (None to leave a tier unset). Validated server-side\nagainst the cached available-models list.",
+        "properties": {
+          "cheap": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cheap"
+          },
+          "fast": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fast"
+          },
+          "strong": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strong"
+          }
+        },
+        "title": "SetTiersRequest",
+        "type": "object"
+      },
+      "Severity": {
+        "enum": [
+          "info",
+          "minor",
+          "major"
+        ],
+        "title": "Severity",
+        "type": "string"
+      },
+      "SignoffRequest": {
+        "additionalProperties": false,
+        "description": "Owner approval of net-new bullets \u2014 clears their `needsSignoff`, unblocking export.\n`baseVersion` is the CV version the client was viewing: the write is rejected (409) if the CV\nhas changed since, so a stale tab can't approve text it never saw (optimistic concurrency).",
+        "properties": {
+          "baseVersion": {
+            "minimum": 1.0,
+            "title": "Baseversion",
+            "type": "integer"
+          },
+          "bulletIds": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Bulletids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "bulletIds",
+          "baseVersion"
+        ],
+        "title": "SignoffRequest",
+        "type": "object"
+      },
+      "Skill": {
+        "additionalProperties": false,
+        "properties": {
+          "keywords": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Keywords",
+            "type": "array"
+          },
+          "level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Level"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "Skill",
+        "type": "object"
+      },
+      "SlopFlag": {
+        "enum": [
+          "generic-phrasing",
+          "llm-tell",
+          "cliche",
+          "tonal-blandness",
+          "off-voice"
+        ],
+        "title": "SlopFlag",
+        "type": "string"
+      },
+      "SlopReport": {
+        "additionalProperties": false,
+        "description": "AI-Language Spotter (Claude) \u2014 model pass that pairs with the deterministic heuristics.",
+        "properties": {
+          "threads": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/SlopThread"
+            },
+            "title": "Threads",
+            "type": "array"
+          }
+        },
+        "title": "SlopReport",
+        "type": "object"
+      },
+      "SlopThread": {
+        "additionalProperties": false,
+        "properties": {
+          "anchorId": {
+            "title": "Anchorid",
+            "type": "string"
+          },
+          "anchorKind": {
+            "$ref": "#/components/schemas/AnchorKind",
+            "default": "bullet"
+          },
+          "comment": {
+            "title": "Comment",
+            "type": "string"
+          },
+          "flag": {
+            "$ref": "#/components/schemas/SlopFlag"
+          },
+          "severity": {
+            "$ref": "#/components/schemas/Severity"
+          },
+          "suggestedRevision": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestedrevision"
+          }
+        },
+        "required": [
+          "anchorId",
+          "severity",
+          "comment",
+          "flag"
+        ],
+        "title": "SlopThread",
+        "type": "object"
+      },
+      "StageEvent": {
+        "additionalProperties": false,
+        "description": "One entry in an application's status timeline. `at` is server-set (UTC offset on wire).",
+        "properties": {
+          "at": {
+            "format": "date-time",
+            "title": "At",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "stage": {
+            "title": "Stage",
+            "type": "string"
+          }
+        },
+        "required": [
+          "at",
+          "stage"
+        ],
+        "title": "StageEvent",
+        "type": "object"
+      },
+      "StageUpdateRequest": {
+        "additionalProperties": false,
+        "description": "Body for `PATCH /workspaces/{id}/applications/{id}/stage` \u2014 advance the status pipeline. The\nstage must be one of the application's `stages` (else 422); the optional note joins the timeline\nevent the server appends.",
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "stage": {
+            "title": "Stage",
+            "type": "string"
+          }
+        },
+        "required": [
+          "stage"
+        ],
+        "title": "StageUpdateRequest",
+        "type": "object"
+      },
+      "SyncModelsResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "availableModels": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Availablemodels",
+            "type": "array"
+          },
+          "provider": {
+            "$ref": "#/components/schemas/Provider"
+          },
+          "syncedAt": {
+            "format": "date-time",
+            "title": "Syncedat",
+            "type": "string"
+          }
+        },
+        "required": [
+          "provider",
+          "availableModels",
+          "syncedAt"
+        ],
+        "title": "SyncModelsResponse",
+        "type": "object"
+      },
+      "TailoredBullet": {
+        "additionalProperties": false,
+        "properties": {
+          "bulletId": {
+            "title": "Bulletid",
+            "type": "string"
+          },
+          "needsSignoff": {
+            "default": false,
+            "title": "Needssignoff",
+            "type": "boolean"
+          },
+          "origin": {
+            "$ref": "#/components/schemas/Origin"
+          },
+          "sourceId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sourceid"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "bulletId",
+          "sourceId",
+          "text",
+          "origin"
+        ],
+        "title": "TailoredBullet",
+        "type": "object"
+      },
+      "TailoredCV": {
+        "additionalProperties": false,
+        "properties": {
+          "jobSpecRef": {
+            "title": "Jobspecref",
+            "type": "string"
+          },
+          "masterVersion": {
+            "title": "Masterversion",
+            "type": "string"
+          },
+          "parentVersion": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parentversion"
+          },
+          "sections": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/TailoredSection"
+            },
+            "title": "Sections",
+            "type": "array"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "jobSpecRef",
+          "masterVersion",
+          "version",
+          "summary"
+        ],
+        "title": "TailoredCV",
+        "type": "object"
+      },
+      "TailoredItem": {
+        "additionalProperties": false,
+        "properties": {
+          "company": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company"
+          },
+          "highlights": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/TailoredBullet"
+            },
+            "title": "Highlights",
+            "type": "array"
+          },
+          "itemId": {
+            "title": "Itemid",
+            "type": "string"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position"
+          },
+          "sourceId": {
+            "title": "Sourceid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "itemId",
+          "sourceId"
+        ],
+        "title": "TailoredItem",
+        "type": "object"
+      },
+      "TailoredSection": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/TailoredItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "sectionId": {
+            "title": "Sectionid",
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/SectionType"
+          }
+        },
+        "required": [
+          "sectionId",
+          "type"
+        ],
+        "title": "TailoredSection",
+        "type": "object"
+      },
+      "Thread": {
+        "additionalProperties": false,
+        "description": "A single anchored critique. `anchorId` is a bulletId / itemId / sectionId.",
+        "properties": {
+          "anchorId": {
+            "title": "Anchorid",
+            "type": "string"
+          },
+          "anchorKind": {
+            "$ref": "#/components/schemas/AnchorKind",
+            "default": "bullet"
+          },
+          "comment": {
+            "title": "Comment",
+            "type": "string"
+          },
+          "severity": {
+            "$ref": "#/components/schemas/Severity"
+          },
+          "suggestedRevision": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestedrevision"
+          }
+        },
+        "required": [
+          "anchorId",
+          "severity",
+          "comment"
+        ],
+        "title": "Thread",
+        "type": "object"
+      },
+      "ThreadDecision": {
+        "description": "The owner's verdict on one review finding (ADR 0013). Lives here, NOT in `common.py`, so it\ndoesn't collide with the Gatekeeper's `Decision` (`pass`/`borderline`/`reject`).",
+        "enum": [
+          "accepted",
+          "rejected"
+        ],
+        "title": "ThreadDecision",
+        "type": "string"
+      },
+      "Tone": {
+        "enum": [
+          "corporate",
+          "startup",
+          "technical",
+          "formal"
+        ],
+        "title": "Tone",
+        "type": "string"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "WorkEntry": {
+        "additionalProperties": false,
+        "properties": {
+          "company": {
+            "title": "Company",
+            "type": "string"
+          },
+          "endDate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enddate"
+          },
+          "highlights": {
+            "items": {
+              "$ref": "#/components/schemas/Highlight"
+            },
+            "title": "Highlights",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "position": {
+            "title": "Position",
+            "type": "string"
+          },
+          "startDate": {
+            "title": "Startdate",
+            "type": "string"
+          },
+          "tags": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Tags",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "company",
+          "position",
+          "startDate",
+          "highlights"
+        ],
+        "title": "WorkEntry",
+        "type": "object"
+      },
+      "Workspace": {
+        "additionalProperties": false,
+        "description": "One isolated tenant. `ownerEmail` is the account that created it; rows scope to `id`.",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "ownerEmail": {
+            "title": "Owneremail",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "ownerEmail",
+          "name"
+        ],
+        "title": "Workspace",
+        "type": "object"
+      },
+      "WorkspaceTailorRequest": {
+        "additionalProperties": false,
+        "description": "Body for `POST /workspaces/{id}/cv` \u2014 tailor the workspace's **stored** master to a job. Only\nthe job is client-supplied; the master is loaded server-side so provenance is always grounded in\nstored truth, never arbitrary client JSON (invariant 2).",
+        "properties": {
+          "jobSpec": {
+            "$ref": "#/components/schemas/JobSpec"
+          }
+        },
+        "required": [
+          "jobSpec"
+        ],
+        "title": "WorkspaceTailorRequest",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "AI CV-tailoring cockpit \u2014 agents, persistence, auth, the provenance gate.",
+    "title": "Contender API",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/admin/providers": {
+      "get": {
+        "operationId": "list_providers_admin_providers_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Providers",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/providers/{provider}/key": {
+      "delete": {
+        "operationId": "delete_key_admin_providers__provider__key_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "provider",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Provider"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProviderKeyStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Key",
+        "tags": [
+          "admin"
+        ]
+      },
+      "put": {
+        "description": "Validate the key by listing models, then store it + cache the list atomically. A key the\nprovider rejects \u2192 400, and nothing is stored.",
+        "operationId": "set_key_admin_providers__provider__key_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "provider",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Provider"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetProviderKeyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminProviderStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Key",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/providers/{provider}/models": {
+      "put": {
+        "operationId": "set_tiers_admin_providers__provider__models_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "provider",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Provider"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetTiersRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProviderModelStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Tiers",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/admin/providers/{provider}/sync-models": {
+      "post": {
+        "operationId": "sync_models_admin_providers__provider__sync_models_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "provider",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Provider"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SyncModelsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Sync Models",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/ai/parse": {
+      "post": {
+        "description": "Parse a pasted job posting into a structured JobSpec (Parser agent, Claude).",
+        "operationId": "parse_ai_parse_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ParseRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobSpec"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Parse",
+        "tags": [
+          "ai"
+        ]
+      }
+    },
+    "/auth/entra/callback": {
+      "get": {
+        "operationId": "entra_callback_auth_entra_callback_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Entra Callback",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/entra/login": {
+      "get": {
+        "operationId": "entra_login_auth_entra_login_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Entra Login",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "operationId": "logout_auth_logout_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Logout",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/magic/callback": {
+      "get": {
+        "operationId": "magic_callback_auth_magic_callback_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "token",
+            "required": true,
+            "schema": {
+              "title": "Token",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Magic Callback",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/magic/request": {
+      "post": {
+        "description": "Email a sign-in link IF the address is allowlisted. Always returns ok \u2014 never reveal who is\non the allowlist.",
+        "operationId": "magic_request_auth_magic_request_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MagicRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Magic Request",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "operationId": "me_auth_me_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthUser"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Me",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health",
+        "tags": [
+          "meta"
+        ]
+      }
+    },
+    "/meta/schema": {
+      "get": {
+        "description": "Never invoked; exists so every model is part of the OpenAPI schema for TS generation.",
+        "operationId": "schema_bundle_meta_schema_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchemaBundle"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Schema Bundle",
+        "tags": [
+          "meta"
+        ]
+      }
+    },
+    "/workspaces/{workspace_id}/applications": {
+      "get": {
+        "description": "Every tracked application in the workspace, newest first (owner-only; invariant 8).",
+        "operationId": "list_applications_workspaces__workspace_id__applications_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ApplicationSummary"
+                  },
+                  "title": "Response List Applications Workspaces  Workspace Id  Applications Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Applications",
+        "tags": [
+          "applications"
+        ]
+      },
+      "post": {
+        "description": "Lock a finished CV against a job and move it to the tracker (owner-only). Enforces the export\ngate (invariant 2): 409 `ExportBlocked` while any net-new bullet is unsigned. 409 `stale` if the\nCV moved since the client read it; 409 `alreadyApplied` if it's already tracked; 422 if no job\ntitle can be resolved; 404 if the CV doesn't exist in this workspace.",
+        "operationId": "apply_workspaces__workspace_id__applications_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ApplicationConflict"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ExportBlocked"
+                    }
+                  ],
+                  "title": "Response 409 Apply Workspaces  Workspace Id  Applications Post"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Apply",
+        "tags": [
+          "applications"
+        ]
+      }
+    },
+    "/workspaces/{workspace_id}/applications/by-cv/{cv_id}": {
+      "get": {
+        "description": "The application tracking this CV as `ApplicationSummary`, or JSON `null` when the CV isn't\napplied (owner-gated) \u2014 the workspace calls this on every load/refocus to redirect a locked\ndeep-link to the tracker. Returns 200 `null` (not 404) so the probe never logs a red console\nerror; a non-member still 403s (invariant 8), and a cross-tenant miss is the same\ninformation-free `null`.",
+        "operationId": "get_by_cv_workspaces__workspace_id__applications_by_cv__cv_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "cv_id",
+            "required": true,
+            "schema": {
+              "title": "Cv Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ApplicationSummary"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Get By Cv Workspaces  Workspace Id  Applications By Cv  Cv Id  Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get By Cv",
+        "tags": [
+          "applications"
+        ]
+      }
+    },
+    "/workspaces/{workspace_id}/applications/{application_id}": {
+      "delete": {
+        "description": "Remove a tracked application AND the locked CV it froze (owner-only). Unknown/cross-tenant id\n\u2192 404. Returns `200 {ok}` (not 204) so the shared `api()` client, which parses every body,\ndoesn't throw.",
+        "operationId": "delete_application_workspaces__workspace_id__applications__application_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "application_id",
+            "required": true,
+            "schema": {
+              "title": "Application Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Application",
+        "tags": [
+          "applications"
+        ]
+      },
+      "get": {
+        "description": "The full application (job metadata + status timeline) for the owner. 404 if unknown.",
+        "operationId": "get_application_workspaces__workspace_id__applications__application_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "application_id",
+            "required": true,
+            "schema": {
+              "title": "Application Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Application",
+        "tags": [
+          "applications"
+        ]
+      }
+    },
+    "/workspaces/{workspace_id}/applications/{application_id}/recruiter": {
+      "patch": {
+        "description": "Set the whole recruiter contact (name + email) on an application (owner-only). Both keys are\nrequired (an omitted key \u2192 422); a non-empty invalid email \u2192 422 (request validation). 404 if\nunknown. Full-replace, last-write-wins (invariant 7).",
+        "operationId": "update_recruiter_workspaces__workspace_id__applications__application_id__recruiter_patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "application_id",
+            "required": true,
+            "schema": {
+              "title": "Application Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecruiterUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Recruiter",
+        "tags": [
+          "applications"
+        ]
+      }
+    },
+    "/workspaces/{workspace_id}/applications/{application_id}/stage": {
+      "patch": {
+        "description": "Advance the status pipeline + append a timeline note (owner-only). 422 for a stage not in the\napplication's `stages`; 404 if unknown.",
+        "operationId": "update_stage_workspaces__workspace_id__applications__application_id__stage_patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "application_id",
+            "required": true,
+            "schema": {
+              "title": "Application Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StageUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Application"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Stage",
+        "tags": [
+          "applications"
+        ]
+      }
+    },
+    "/workspaces/{workspace_id}/cv": {
+      "get": {
+        "description": "Every tailored CV in the workspace, newest first, as lightweight summaries for the dashboard\nlist. Scoped to the path workspace (invariant 8); a non-member fails closed in the auth dep,\nnever here.",
+        "operationId": "list_cvs_workspaces__workspace_id__cv_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CvSummary"
+                  },
+                  "title": "Response List Cvs Workspaces  Workspace Id  Cv Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Cvs",
+        "tags": [
+          "cv"
+        ]
+      },
+      "post": {
+        "description": "Tailor the workspace's STORED master to the job, run the provenance gate, then persist\n(owner-only). The master is loaded server-side (invariant 2): provenance is grounded in stored\ntruth, never client-supplied JSON. 404 if the owner hasn't saved a master yet.",
+        "operationId": "create_cv_workspaces__workspace_id__cv_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkspaceTailorRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedCV"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Cv",
+        "tags": [
+          "cv"
+        ]
+      }
+    },
+    "/workspaces/{workspace_id}/cv/from-master": {
+      "post": {
+        "description": "Build an AI-free **verbatim draft** from the workspace's stored master and persist it\n(owner-only). No provider key needed: every bullet is a verbatim copy of a master highlight, so\nthe draft has zero net-new bullets and export is never blocked \u2014 the keyless path that closes\nthe loop without a key. 404 if no master is stored yet.",
+        "operationId": "create_from_master_workspaces__workspace_id__cv_from_master_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedCV"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create From Master",
+        "tags": [
+          "cv"
+        ]
+      }
+    },
+    "/workspaces/{workspace_id}/cv/{cv_id}": {
+      "delete": {
+        "description": "Owner deletes a tailored CV and its dashboard label. Unknown or cross-tenant id \u2192 **404**\n(the store filters on `(workspace_id, cv_id)`, so no other tenant's CV is reachable). Returns\n`200 {ok}` (not 204) so the shared `api()` client, which parses every body, doesn't throw.",
+        "operationId": "delete_cv_workspaces__workspace_id__cv__cv_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "cv_id",
+            "required": true,
+            "schema": {
+              "title": "Cv Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Cv",
+        "tags": [
+          "cv"
+        ]
+      },
+      "get": {
+        "description": "The `{master, cv}` preview bundle. Not sign-off-gated \u2014 preview shows net-new bullets so\nthe owner can decide; export (below) is what the sign-off gate blocks.",
+        "operationId": "read_cv_workspaces__workspace_id__cv__cv_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "cv_id",
+            "required": true,
+            "schema": {
+              "title": "Cv Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RenderBundle"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Read Cv",
+        "tags": [
+          "cv"
+        ]
+      }
+    },
+    "/workspaces/{workspace_id}/cv/{cv_id}/apply": {
+      "post": {
+        "description": "Owner applies accepted review threads as Corrector rewrites (dec #7). A cheap preflight\nrejects a stale/locked CV **before** the billed LLM; the Claude call then runs OUTSIDE any DB\ntransaction (a session-free authoring runner + a committed preflight), and the short critical\nsection guards + saves under the lock. v1 corrects only **bullet**-anchored threads (item /\nsection / summary are advisory-only); the server trusts the client threads as INPUT only \u2014 the\noutput structural guard + selective re-ground decide what persists (invariant 2). 404 unknown\nid; 409 stale / locked; 422 a structurally-invalid or blank/oversized correction, or no\ncorrectable bullet thread; 503 if the Anthropic tier/key is unset (preflight).",
+        "operationId": "apply_corrections_workspaces__workspace_id__cv__cv_id__apply_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "cv_id",
+            "required": true,
+            "schema": {
+              "title": "Cv Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplyFeedbackRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RenderBundle"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Apply Corrections",
+        "tags": [
+          "cv"
+        ]
+      }
+    },
+    "/workspaces/{workspace_id}/cv/{cv_id}/edit": {
+      "post": {
+        "description": "Owner edits one tailored bullet's text. The server re-grounds just that bullet (invariant 2):\na grounded bullet stays grounded (verbatim\u2192reworded), a net-new bullet stays gated. 422 for an\nunknown bullet id; 409 if the CV was changed concurrently (reload and retry).",
+        "operationId": "edit_bullet_workspaces__workspace_id__cv__cv_id__edit_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "cv_id",
+            "required": true,
+            "schema": {
+              "title": "Cv Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditBulletRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RenderBundle"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Edit Bullet",
+        "tags": [
+          "cv"
+        ]
+      }
+    },
+    "/workspaces/{workspace_id}/cv/{cv_id}/export": {
+      "get": {
+        "description": "Gate-checked render bundle (invariant 2). 409 with the blocking bullet ids while any net-new\nbullet is unsigned; otherwise the `{master, cv}` cleared for render. Owner-only.",
+        "operationId": "export_cv_workspaces__workspace_id__cv__cv_id__export_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "cv_id",
+            "required": true,
+            "schema": {
+              "title": "Cv Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RenderBundle"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportBlocked"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Export Cv",
+        "tags": [
+          "cv"
+        ]
+      }
+    },
+    "/workspaces/{workspace_id}/cv/{cv_id}/review": {
+      "delete": {
+        "description": "Owner clears the persisted review for a CV (the \"Clear review\" action): wipe the run + its\nper-finding decisions so the panel/diff reset. Idempotent \u2014 `delete_review` is 0-row-safe, so a\nsecond clear (or clearing a never-reviewed CV) is a **200 no-op**, never a 404. Needs a\ncommit: `delete_review` rides the caller's transaction (like the GET's orphan-delete).",
+        "operationId": "clear_review_workspaces__workspace_id__cv__cv_id__review_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "cv_id",
+            "required": true,
+            "schema": {
+              "title": "Cv Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Clear Review",
+        "tags": [
+          "cv"
+        ]
+      },
+      "get": {
+        "description": "The persisted latest review run for a CV (owner-only), or **200-null** when none is stored\n(ADR 0013). Deliberately NOT 404: the rehydrate probe fires on every workspace mount, and a 404\nwould reintroduce the console noise. A stored bundle that no longer validates against the\ncurrent `ReviewBundle` (a schema skew \u2014 `CamelModel` is `extra=\"forbid\"`) also reads as\n**200-null** with a warning, so a contract change self-heals as \"no review\" instead of a 500.",
+        "operationId": "read_review_workspaces__workspace_id__cv__cv_id__review_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "cv_id",
+            "required": true,
+            "schema": {
+              "title": "Cv Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/SavedReview"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Read Review Workspaces  Workspace Id  Cv  Cv Id  Review Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Read Review",
+        "tags": [
+          "cv"
+        ]
+      },
+      "post": {
+        "description": "Run the AI review panel over a stored CV (owner-only) \u2014 Editor / Fact-Checker / Spotter and,\nwhen the CV targets a job, the Gatekeeper. The CV + its stored master + `JobSpec` load\nserver-side (invariants 2 & 8); the adjudicators read the `TailoredCV` JSON (ADR 0010). A\nno-job draft runs only the job-independent agents (Fact-Checker + Spotter), so `gatekeeper` /\n`editor` stay null. With `Accept: text/event-stream` the panel STREAMS per-agent SSE\n(`AgentStarted` / `AgentReport` / `AgentDone`, terminal `RunDone`); otherwise it blocks and\nreturns the full `ReviewBundle`. **Advisory** \u2014 nothing here gates export (invariant 2); only\nsign-off does. Provider config (unset tier / missing key) \u2192 503 preflight; a per-agent in-flight\nfailure DEGRADES (it lands in `failures` / an `AgentDone(ok=false)`), it never fails the request\n(invariant 5 is met by surfacing it explicitly, not by an HTTP error).",
+        "operationId": "review_cv_workspaces__workspace_id__cv__cv_id__review_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "cv_id",
+            "required": true,
+            "schema": {
+              "title": "Cv Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewBundle"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Review Cv",
+        "tags": [
+          "cv"
+        ]
+      }
+    },
+    "/workspaces/{workspace_id}/cv/{cv_id}/review/decisions": {
+      "put": {
+        "description": "Persist the owner's WHOLE per-finding decisions snapshot for a stored review (owner-only,\nADR 0013) \u2014 whole-snapshot last-write-wins at the same review version (invariant 7). **404**\n(`ReviewNotFound`) if no review is stored; **409** (`ReviewVersionConflict`) if the stored\nreview is a different CV version than the client shows (it was re-run since) \u2014 the server-side\ndefense against a stale writer; **422** if the body is over bounds (\u2264512 entries, \u2264512\nchars/key).",
+        "operationId": "set_review_decisions_workspaces__workspace_id__cv__cv_id__review_decisions_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "cv_id",
+            "required": true,
+            "schema": {
+              "title": "Cv Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewDecisionsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OkResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Review Decisions",
+        "tags": [
+          "cv"
+        ]
+      }
+    },
+    "/workspaces/{workspace_id}/cv/{cv_id}/signoff": {
+      "post": {
+        "description": "Owner approves net-new bullets, clearing `needsSignoff` (idempotent). Unblocks export.",
+        "operationId": "sign_off_workspaces__workspace_id__cv__cv_id__signoff_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "cv_id",
+            "required": true,
+            "schema": {
+              "title": "Cv Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignoffRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RenderBundle"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Sign Off",
+        "tags": [
+          "cv"
+        ]
+      }
+    },
+    "/workspaces/{workspace_id}/ingest": {
+      "get": {
+        "description": "Runs newest-first \u2014 the recovery / history surface (a dropped upload is reachable here).",
+        "operationId": "list_ingest_runs_workspaces__workspace_id__ingest_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/IngestionRun"
+                  },
+                  "title": "Response List Ingest Runs Workspaces  Workspace Id  Ingest Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Ingest Runs",
+        "tags": [
+          "ingest"
+        ]
+      },
+      "post": {
+        "description": "Paste a CV / LinkedIn document \u2192 run the Extractor \u2192 reviewable net-new proposals. With\n`Accept: text/event-stream` the same synchronous run is streamed as per-agent SSE progress\n(ending in `RunDone{resultRef}`, then the client reloads the bundle); otherwise it blocks and\nreturns the bundle. See `_prepare_run` / `_execute_run` for the run-row-first / mark-failed /\n409 / 503 semantics.",
+        "operationId": "start_ingest_workspaces__workspace_id__ingest_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasteIngestRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestionRunBundle"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Start Ingest",
+        "tags": [
+          "ingest"
+        ]
+      }
+    },
+    "/workspaces/{workspace_id}/ingest/file": {
+      "post": {
+        "description": "Upload a PDF (a CV, or a LinkedIn 'Save to PDF' export) \u2192 extract natively via Claude's\ndocument block (ADR 0007) \u2192 reviewable net-new proposals. pypdf supplies the stored text copy\nand the byte/page guard (413/422); the run then proceeds as the paste path (with the native\ntext-only fallback), blocking or \u2014 with `Accept: text/event-stream` \u2014 streamed as SSE progress.\nOwner-only; `sourceType=pasted` belongs to the text route (422).",
+        "operationId": "start_ingest_file_workspaces__workspace_id__ingest_file_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_start_ingest_file_workspaces__workspace_id__ingest_file_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestionRunBundle"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Start Ingest File",
+        "tags": [
+          "ingest"
+        ]
+      }
+    },
+    "/workspaces/{workspace_id}/ingest/{run_id}": {
+      "get": {
+        "description": "The run + proposals (reload-safe, deep-linkable). Unknown / cross-tenant id \u2192 404.",
+        "operationId": "get_ingest_run_workspaces__workspace_id__ingest__run_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestionRunBundle"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Ingest Run",
+        "tags": [
+          "ingest"
+        ]
+      }
+    },
+    "/workspaces/{workspace_id}/ingest/{run_id}/apply": {
+      "post": {
+        "description": "Apply the accepted proposals to the master under the advisory lock. 409 if the master changed\nsince the run started (staleness); 422 if the result isn't a valid master (e.g. first-run\nidentity\nincomplete); partial \u2014 conflicts are reported, the rest still lands.",
+        "operationId": "apply_ingest_run_workspaces__workspace_id__ingest__run_id__apply_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplyResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Apply Ingest Run",
+        "tags": [
+          "ingest"
+        ]
+      }
+    },
+    "/workspaces/{workspace_id}/ingest/{run_id}/decide": {
+      "post": {
+        "description": "Bulk accept/decline. The server only flips proposals that are genuinely still pending, and on\naccept (\"Add all new items\") only `net-new` ones \u2014 so the client's list can't widen the gate\n(invariant 2). Unknown id \u2192 404; an enrich/correction in an accept \u2192 422; stale item \u2192 409.",
+        "operationId": "bulk_decide_proposals_workspaces__workspace_id__ingest__run_id__decide_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkDecideRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestionRunBundle"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Bulk Decide Proposals",
+        "tags": [
+          "ingest"
+        ]
+      }
+    },
+    "/workspaces/{workspace_id}/ingest/{run_id}/discard": {
+      "post": {
+        "description": "Abandon a run \u2014 the escape hatch from a wedged/unwanted run, freeing the workspace.",
+        "operationId": "discard_ingest_run_workspaces__workspace_id__ingest__run_id__discard_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestionRun"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Discard Ingest Run",
+        "tags": [
+          "ingest"
+        ]
+      }
+    },
+    "/workspaces/{workspace_id}/ingest/{run_id}/proposals/{proposal_id}": {
+      "post": {
+        "description": "Accept / decline / edit one proposal (optimistic-locked on its version \u2192 409 if stale).",
+        "operationId": "decide_proposal_workspaces__workspace_id__ingest__run_id__proposals__proposal_id__post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "proposal_id",
+            "required": true,
+            "schema": {
+              "title": "Proposal Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DecideProposalRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestionRunBundle"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Decide Proposal",
+        "tags": [
+          "ingest"
+        ]
+      }
+    },
+    "/workspaces/{workspace_id}/master": {
+      "get": {
+        "description": "The workspace's stored master (owner-gated), or **200-null** when none has been saved.\nDeliberately NOT 404 (probe parity with the review-latest GET): the workspace mount and the\n/master editor both probe this on load, and a first-run 404 was console noise for an\nexpected state, not a fault.",
+        "operationId": "read_master_workspaces__workspace_id__master_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/MasterProfile"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Read Master Workspaces  Workspace Id  Master Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Read Master",
+        "tags": [
+          "master"
+        ]
+      },
+      "put": {
+        "description": "Owner upserts the workspace's master. 422 on a blank / duplicate / unsafe stable id \u2014\nthese are the provenance anchors and must be valid before storage.",
+        "operationId": "put_master_workspaces__workspace_id__master_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MasterProfile"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MasterProfile"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Put Master",
+        "tags": [
+          "master"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,67 @@
+# Dependabot configuration — explicit control over update cadence + PR noise.
+# Previously Dependabot ran from repo settings with no committed config, which
+# spawned ungrouped, perpetually-queued dynamic runs. This pins every ecosystem
+# to a weekly, grouped cadence with conventional-commit messages.
+# Reference: https://docs.github.com/en/code-security/dependabot/working-with-dependabot/dependabot-options-reference
+version: 2
+updates:
+  # Frontend — Next.js / React. The "npm" ecosystem reads pnpm-lock.yaml.
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    groups:
+      # Bundle minor + patch bumps into one PR; majors stay separate for review.
+      frontend-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Backend — FastAPI / Python via uv (GA since 2025-03; reads pyproject.toml + uv.lock).
+  - package-ecosystem: "uv"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    groups:
+      backend-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  # GitHub Actions — the workflow's actions are pinned by major tag; without this
+  # ecosystem they never receive update PRs or security advisories via Dependabot.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    groups:
+      actions-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Docker — both Dockerfiles pin base/tool images immutably (version tag AND digest;
+  # invariant 3 for the render container). This ecosystem owns the bumps so the
+  # digest pins don't fossilise.
+  - package-ecosystem: "docker"
+    directories:
+      - "/backend"
+      - "/frontend"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore"
+      include: "scope"

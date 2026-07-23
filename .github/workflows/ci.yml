@@ -1,0 +1,83 @@
+name: ci
+
+# Pre-merge SAFETY NET + the production-build mechanics gate. This runs the SAME command as local
+# development — `node scripts/quality-gate.mjs` — so CI and the local gate can never disagree.
+# It does NOT deploy; a separately configured hosting integration may watch `main`. To make merges
+# safe, protect `main` and require this `gate` check (see docs/architecture/deployment.md).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  # Superseded PR pushes cancel their in-flight run, but pushes to main NEVER cancel each other:
+  # A hosting integration may deploy every main commit independently of CI, so a cancelled main
+  # run could leave a deployed commit with no completed CI record.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+
+    # Real Postgres for the advisory-lock concurrency tests (locks.py is a no-op on SQLite — the
+    # serialization property is only ever exercised here, never claimed from the local gate).
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: contender_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # the doc-impact lint diffs against history
+
+      # --- Python toolchain (uv manages Python 3.11 itself) ---
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      # --- Node toolchain ---
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 26
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      # --- Install both services' deps ---
+      - name: Install backend deps
+        working-directory: backend
+        run: uv sync --extra dev
+      - name: Install frontend deps
+        working-directory: frontend
+        run: pnpm install --frozen-lockfile
+
+      # --- The gate (guidance -> invariants -> scripts self-tests -> doc-impact -> backend ->
+      # schema no-drift -> frontend). --fail-on-gap: a missing tool or a skipped check FAILS
+      # here (no silent passes in CI). ---
+      - name: Quality gate
+        run: node scripts/quality-gate.mjs --fail-on-gap
+        env:
+          TEST_POSTGRES_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/contender_test
+
+      # --- Deployment mechanics: the production Next build must compile (the frontend Dockerfile
+      # builds this same app; the gate alone never runs `next build`). ---
+      - name: Frontend production build
+        run: pnpm --dir frontend build

@@ -1,0 +1,33 @@
+# Node / Next
+node_modules/
+.next/
+*.tsbuildinfo
+# Playwright MCP artifacts (page snapshots/console logs/screenshots — may contain live session data).
+.playwright-mcp/
+docs/design/screenshots/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+!*/.env.example
+
+# Personal/generated data
+*.pdf
+*.docx
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*-cookies.txt
+
+# OS
+.DS_Store

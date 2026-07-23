@@ -1,0 +1,1066 @@
+/*
+ * Contender design tokens — ported verbatim from the Claude Design handoff
+ * (project/Contender.dc.html). Dark is the default; light derives from the same set.
+ * The CV "paper" surface (serif on cream) is deliberately distinct from the app chrome.
+ */
+
+:root,
+[data-theme="dark"] {
+  --bg: #0d1014;
+  --panel: #151a21;
+  --panel-2: #1b212a;
+  --raised: #222a35;
+  --line: #262e39;
+  --line-strong: #39434f;
+  --text: #e7ecf3;
+  --text-2: #9aa6b4;
+  --text-3: #646f7c;
+  --accent: #5b9dff;
+  --accent-2: #3f7fe0;
+  --on-accent: #0a0d11;
+
+  /* Reviewer identities — each agent has its own colour/mark (per the design brief). */
+  --rv-parser: oklch(0.72 0.11 248);
+  --rv-tailor: oklch(0.76 0.1 200);
+  --rv-editor: oklch(0.71 0.13 292);
+  --rv-fact: oklch(0.8 0.13 74);
+  --rv-spotter: oklch(0.73 0.16 336);
+  --rv-gate: oklch(0.84 0.035 230);
+
+  --ok: oklch(0.78 0.14 152);
+  --warn: oklch(0.82 0.13 80);
+  --bad: oklch(0.68 0.19 26);
+
+  /* Warn-toned ESSENTIAL text ink — WCAG-AA (≥4.5:1) on --bg/--panel/--panel-2 in both themes.
+     Dark --warn already clears (9.15–10.78), so dark aliases it; light overrides with a darker
+     ink below. Text sites only: border/fill/dot/stroke uses keep raw --warn (tagStyle/kwChip/
+     VerdictPill chrome never takes --ink-warn — their labels are already --text/--text-2). */
+  --ink-warn: var(--warn);
+
+  /* Toggle-switch non-text contrast (WCAG 1.4.11). The OFF track must clear 3:1 against both the
+     host --panel and the white knob (the old --line-strong track was 1.74 vs --panel); the knob
+     ring is an OPAQUE dark outline (same job as --agent-ink: dark ink on light colour) so the
+     knob stays discernible on every checked track in use — the white knob body alone is <3:1 on
+     all eight dark checked tracks (1.63–2.72). Never an alpha shadow: the contrast suite's parser
+     does not composite. Ratios: docs/architecture/design-system.md §Computed contrast. */
+  --switch-track-off: #616c79;
+  --switch-knob-ring: #14161a;
+
+  /* Agent-badge glyph ink. Dark theme: light --rv-* backgrounds → dark ink (AA). Light theme override
+     below flips to light ink, since the light --rv-* set is darker. */
+  --agent-ink: #14161a;
+}
+
+[data-theme="light"] {
+  --bg: #e8ebef;
+  --panel: #ffffff;
+  --panel-2: #f4f6f9;
+  --raised: #ffffff;
+  --line: #dde2e9;
+  --line-strong: #c2cad4;
+  --text: #141a22;
+  --text-2: #4d5765;
+  --text-3: #828c98;
+  --accent: #2f6df0;
+  --accent-2: #205bd6;
+  --on-accent: #ffffff;
+
+  --rv-parser: oklch(0.55 0.13 248);
+  /* L nudged 0.56→0.54 so white badge ink clears WCAG-AA (4.68:1) on this cyan. */
+  --rv-tailor: oklch(0.54 0.11 200);
+  --rv-editor: oklch(0.52 0.16 292);
+  --rv-fact: oklch(0.62 0.15 70);
+  --rv-spotter: oklch(0.55 0.19 336);
+  --rv-gate: oklch(0.55 0.04 230);
+
+  --ok: oklch(0.55 0.15 152);
+  --warn: oklch(0.62 0.15 75);
+  --bad: oklch(0.55 0.2 26);
+
+  /* Light warn-text ink ≈ #8d5e00 — 4.70/5.62/5.20 vs --bg/--panel/--panel-2 (raw light --warn
+     fails as text: 3.11/3.71/3.43). */
+  --ink-warn: oklch(0.52 0.11 75);
+
+  /* Light switch: OFF track 4.37 vs --panel + the knob; ring stays a dark ink — in light the
+     white knob body carries every checked track (≥3.71) and the ring itself still clears ≥3.13. */
+  --switch-track-off: #6f7a87;
+  --switch-knob-ring: #10151c;
+
+  /* Light theme: the --rv-* set is darker, so the badge glyph uses light ink by default for AA —
+     except the bright gold `fact` badge, which needs dark ink (per-agent override below; all pairs
+     verified ≥4.5:1). Dark theme needs no overrides (all --rv-* are light → dark ink). */
+  --agent-ink: #ffffff;
+  --ink-fact: #14161a;
+}
+
+/* Type + the CV document "paper" tokens are shared across themes. Font families bind to the
+   next/font CSS variables set in src/lib/fonts.ts. */
+:root {
+  --ui: var(--font-archivo), system-ui, sans-serif;
+  --mono: var(--font-plex-mono), ui-monospace, monospace;
+  --serif: var(--font-source-serif), Georgia, serif;
+
+  /* App-shell left-rail width (the ACTIVE width). .app-main is offset by it on desktop.
+     `--rail-w-collapsed` becomes the active value when the rail is unpinned (the 64px pin-strip);
+     `--rail-w-expanded` (214px) is the pinned width and the width the strip flies out to on
+     hover/focus. */
+  --rail-w-expanded: 214px;
+  --rail-w-collapsed: 64px;
+  --rail-w: var(--rail-w-expanded);
+  /* Phone bottom tab-bar height excl. safe-area (shown <720px); .app-main clears it.
+     Matches the rendered bar: 6px top + 48px tab + 6px bottom. */
+  --bottom-nav-h: 60px;
+
+  --paper: #faf8f3;
+  --paper-2: #f1eee6;
+  --ink: #1b1c1e;
+  --ink-2: #55514a;
+  --ink-3: #8a857b;
+  --rule: #e0dccf;
+
+  /* Toggle-switch knob — a fixed light disc in BOTH themes (reads as a physical switch). */
+  --switch-knob: #ffffff;
+
+  color-scheme: dark;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--ui);
+  font-size: 14px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
+}
+
+a {
+  color: inherit;
+}
+
+/* Quality floor: visible keyboard focus, reduced-motion respected (design brief). */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Workspace layout: editor + live preview (+ reviewers) side by side on desktop; below the ws-tabs
+   breakpoint the panes stack AND a tab bar gates to one pane at a time (B2c). Inline styles can't
+   express media queries, so these utilities own the responsive switch. `.ws-left`/`.ws-editor-group`
+   set their flex *container* display HERE (not inline) so the narrow `display:none` tab-gating can
+   override it (an inline `display` would beat the stylesheet); flex *item* bases stay inline. */
+.ws-cols {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+.ws-left,
+.ws-editor-group {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+/* The Editor/Preview/Reviewers tab bar — hidden on desktop (all three panes show), shown only below
+   the ws-tabs breakpoint. Active/inactive button colours are set inline off `wsTab`; only `display`
+   lives in CSS so the media query owns visibility. */
+.ws-tabbar {
+  display: none;
+}
+.ws-tab-btn {
+  flex: 1;
+  padding: 11px 6px;
+  font-family: var(--ui);
+  font-size: 13px;
+  font-weight: 500;
+  background: transparent;
+  border-bottom: 2px solid transparent;
+  transition:
+    color 0.15s,
+    background 0.15s,
+    border-color 0.15s;
+}
+.ws-tab-btn:hover {
+  background: var(--panel-2);
+}
+
+/* Workspace detail wrapper (DevPR13). Default = the stacked, page-scrolling layout; the desktop 3-pane
+   media queries below bind it to the viewport and go full-bleed. The chrome rows + the workspace
+   `.ws-cols` centre at the shared 1180 max-width here — `width:100%` so they still fill (an auto
+   cross-margin otherwise cancels flex stretch and they'd shrink to content); the 3-pane override drops
+   the cap. */
+.ws-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: 2rem;
+}
+.ws-topbar {
+  max-width: 1180px;
+  width: 100%;
+  margin: 0 auto 18px;
+}
+.ws-banner {
+  max-width: 1180px;
+  width: 100%;
+  margin: 0 auto 14px;
+}
+.ws-cols[data-ws-tab] {
+  max-width: 1180px;
+  width: 100%;
+  margin: 0 auto;
+}
+.ws-tabbar {
+  max-width: 1180px;
+  width: 100%;
+  margin: 0 auto 14px;
+}
+/* The preview "drafting table" surface: horizontal padding only — never a scroller itself. Below the
+   3-pane threshold the BODY is the single scroller; at/above it the preview PANE owns the scroll (the
+   3-pane media query drops even this padding so the paper reaches its full 660px). */
+.ws-preview-surface {
+  padding: 0 18px;
+}
+
+/* The rail's clickable Gatekeeper card hover (inline styles own the rest; :focus-visible is global). */
+.ws-gk-card {
+  transition: filter 0.15s;
+}
+.ws-gk-card:hover {
+  filter: brightness(1.05);
+}
+
+/* The left navigator's bullet rows are <button>s — a faint hover tint marks them navigable (the resting
+   → glyph is the touch cue, since :hover/cursor don't fire on touch). :hover can't live inline. */
+.ws-bullet-nav {
+  transition: background 0.15s;
+}
+.ws-bullet-nav:hover {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+/* DevPR17 — in-margin review markers + the in-place ReviewNote (chrome tokens over the cream paper, like
+   the page-break chip). The resting shadow + hairline ring give every marker a silhouette on cream in
+   BOTH themes (light agent colours like --rv-gate/--rv-fact would otherwise vanish on the paper). :hover
+   and the ring can't be inline. The fadeUp/spin animations honour prefers-reduced-motion via the reset. */
+.ws-marker-glyph {
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.12),
+    0 3px 9px -2px rgba(0, 0, 0, 0.3);
+  transition:
+    transform 0.12s,
+    box-shadow 0.12s;
+}
+.ws-marker:hover .ws-marker-glyph {
+  transform: scale(1.08);
+}
+.ws-marker.is-selected .ws-marker-glyph,
+.ws-marker:focus-visible .ws-marker-glyph {
+  box-shadow:
+    0 0 0 2px var(--accent),
+    0 3px 9px -2px rgba(0, 0, 0, 0.3);
+}
+.ws-marker.is-stale {
+  opacity: 0.5;
+}
+.ws-marker.is-resolved {
+  opacity: 0.9;
+}
+.ws-marker:focus-visible {
+  outline: none;
+}
+.ws-reviewnote {
+  animation: fadeUp 0.2s ease;
+}
+.ws-spin {
+  width: 13px;
+  height: 13px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  display: inline-block;
+  animation: spin 0.7s linear infinite;
+}
+
+/* Ingest correction card: current-vs-proposed side by side on desktop, stacked on phone widths.
+   Inline styles can't express the media query, so this utility owns the responsive switch. */
+.ingest-cols {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+.ingest-cols > * {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+@media (max-width: 640px) {
+  .ingest-cols {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* Dim behind the in-app confirm modal (ingest Apply/Discard). The dialog is a native <dialog> opened
+   with showModal(), so the browser owns modality (inert background + focus trap); this only styles its
+   top-layer backdrop, which inline styles can't reach. */
+dialog::backdrop {
+  background: rgba(0, 0, 0, 0.45);
+}
+
+/* Motion keyframes from the Claude design. All gated by the prefers-reduced-motion reset below. */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes flashfix {
+  from {
+    background: color-mix(in srgb, var(--ok) 38%, transparent);
+  }
+  to {
+    background: transparent;
+  }
+}
+@keyframes pulseDot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Hover utilities — React inline styles can't express :hover, so the shell rows / icon buttons opt in
+   here (matches the design's per-row hover). */
+.cos-navrow {
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.cos-navrow:hover {
+  background: var(--panel-2);
+  color: var(--text);
+}
+.cos-iconbtn {
+  /* Base outline + ink live here (NOT inline on IconButton) so the :hover below actually wins — an
+     inline background/color/border would beat the stylesheet (the recurring gotcha). Consumers can
+     still override per-use inline (e.g. a borderless modal close passes border:none). */
+  background: transparent;
+  color: var(--text-2);
+  border: 1px solid var(--line);
+  transition:
+    background 0.15s,
+    color 0.15s,
+    border-color 0.15s;
+}
+.cos-iconbtn:hover {
+  background: var(--panel-2);
+  color: var(--text);
+  border-color: var(--text-3);
+}
+/* Outlined surface that lifts + accents its border on hover (e.g. the sign-in MSO button). Owns its
+   base border so the :hover border-color wins (an inline border shorthand would beat a class rule). */
+.cos-lift {
+  border: 1px solid var(--line-strong);
+  transition:
+    border-color 0.15s,
+    transform 0.1s;
+}
+.cos-lift:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+/* Application-list card (the ws-list grid): firms its border, lifts, and deepens its shadow on hover.
+   Owns its base border so the :hover border-color wins; the rgba(0,0,0,…) shadow is guard-allowlisted. */
+.cos-cardlift {
+  border: 1px solid var(--line);
+  transition:
+    border-color 0.15s,
+    transform 0.1s,
+    box-shadow 0.15s;
+}
+.cos-cardlift:hover {
+  border-color: var(--line-strong);
+  transform: translateY(-2px);
+  box-shadow: 0 16px 40px -26px rgba(0, 0, 0, 0.7);
+}
+/* Review-note controls (B2c-ii). The filled accept button LIFTS with a shadow on hover (NOT a
+   brightness filter — brightening an agent-colour fill can push a tight WCAG-AA ink pair under 4.5:1,
+   e.g. light-theme gate/tailor); ghost dismiss buttons (on the panel-2 note card) lift to --panel.
+   React inline styles can't do :hover, so the note-card buttons opt into these. */
+.cos-brighten {
+  transition: box-shadow 0.15s;
+}
+/* :not(:disabled) so a busy/disabled Save button (admin C3) doesn't show a live "lift" affordance. */
+.cos-brighten:not(:disabled):hover {
+  box-shadow: 0 3px 9px -2px rgba(0, 0, 0, 0.3);
+}
+.cos-ghostbtn {
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+.cos-ghostbtn:hover {
+  background: var(--panel);
+}
+/* Application-detail back controls ("← Applications" / "Back to Applications →"): underline on hover.
+   The visible keyboard ring is the global :focus-visible rule; the ≥44px hit area is inline. */
+.cos-backlink:hover {
+  text-decoration: underline;
+}
+/* Tracker row expand control: the disclosure button tints on hover. Scoped to the button (not the
+   whole row) so the hover affordance is honest — only the button toggles; the stage dots + chevron
+   are separate. */
+.cos-trackrow-toggle {
+  /* Owns the base background so the :hover wins (an inline background would beat the stylesheet). */
+  background: transparent;
+  transition: background 0.15s;
+}
+.cos-trackrow-toggle:hover {
+  background: var(--panel-2);
+}
+/* Stage-pipeline dot (the quick-move control): brightens on pointer hover, per the design. */
+.cos-dot {
+  transition: filter 0.12s;
+}
+.cos-dot:hover {
+  filter: brightness(1.15);
+}
+/* The collapsed-row chevron is a redundant decorative indicator. The class owns `display` (no inline
+   display on the span) so the phone-width override below wins. Hidden at phone width so it doesn't
+   orphan onto its own wrapped line (the expand button still carries the affordance). */
+.cos-rowchevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+@media (max-width: 719px) {
+  .cos-rowchevron {
+    display: none;
+  }
+}
+/* Tracker "Move to" stage button: firms its border on hover (the fill/colour is set inline per tone). */
+.cos-movebtn {
+  /* Owns the inactive (default) border so the :hover firms it (an inline border would beat the
+     stylesheet). The active/current button overrides this border inline with its tinted tone. */
+  border: 1px solid var(--line);
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+.cos-movebtn:hover {
+  border-color: var(--text-3);
+}
+/* Master editor (C2). Accent-outlined "Add role / Add profile" button: a faint accent tint on hover. */
+/* Each class OWNS the property its :hover changes (the consuming inline style must NOT set it, or the
+   inline value beats the stylesheet and the hover is inert). */
+.cos-addbtn {
+  background: transparent;
+  transition: background 0.15s;
+}
+.cos-addbtn:hover {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+/* Dashed "Add line / Add bullet" button: firms its border + ink on hover. */
+.cos-addline {
+  color: var(--text-2);
+  border: 1px dashed var(--line-strong);
+  transition:
+    border-color 0.15s,
+    color 0.15s;
+}
+.cos-addline:hover {
+  color: var(--text);
+  border-color: var(--text-3);
+}
+/* Icon remove button (role / bullet / skill): tints to the danger colour on hover. */
+.cos-removeicon {
+  color: var(--text-3);
+  background: transparent;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.cos-removeicon:hover {
+  background: color-mix(in srgb, var(--bad) 14%, transparent);
+  color: var(--bad);
+}
+/* Master canonical-source banner: stacks to a column at phone width (the info has no inline
+   flex-direction so this wins), and the solid "Add source" CTA goes full-width below the copy. */
+@media (max-width: 719px) {
+  .cos-masterbanner {
+    flex-direction: column;
+  }
+  .cos-bannercta {
+    width: 100%;
+  }
+}
+/* Master skill / language chips (S7). The pill is the <span>; two SIBLING buttons live inside it (never
+   nested interactives): the body toggles the inline editor, the × removes. ALL chip styling lives here
+   (not inline) so the :hover tints win and the family stays one source. Tap targets: the body's and the
+   ×'s `::after` each inset −6px vertically → a 44px-tall row over a 32px-tall pill, so the 12px cloud gap
+   yields a 44px row pitch with no overlap (AGENTS §7). Named AA divergences (design-system.md §Master):
+   the pill is 32px (mockup 26) and the × box is 28px wide (<44 — the editor's 44×44 Remove is the escape
+   hatch). */
+.cos-chip {
+  display: inline-flex;
+  align-items: stretch;
+  min-height: 32px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.cos-chip-body {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 6px 0 10px;
+  font-family: var(--ui);
+  font-size: 12.5px;
+  color: var(--text);
+  background: transparent;
+  border: none;
+  border-radius: 6px 0 0 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.cos-chip-body:hover {
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+}
+.cos-chip-body::after {
+  content: "";
+  position: absolute;
+  inset: -6px 0; /* vertical-only: 32px pill + 6px top + 6px bottom = 44px tall */
+}
+.cos-chipx {
+  position: relative;
+  flex: none;
+  width: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-size: 15px;
+  line-height: 1;
+  color: var(--text-3);
+  background: transparent;
+  border: none;
+  border-radius: 0 6px 6px 0;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.cos-chipx:hover {
+  background: color-mix(in srgb, var(--bad) 16%, transparent);
+  color: var(--bad);
+}
+.cos-chipx::after {
+  content: "";
+  position: absolute;
+  inset: -6px 0; /* 44px tall (28px wide) — width is the named AA divergence */
+}
+/* Chip cloud "Add" button: firms its border + tints on hover (the base border/bg live here so :hover
+   wins — an inline value would beat the stylesheet). */
+.cos-addchip {
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+.cos-addchip:hover {
+  background: var(--panel-2);
+  border-color: var(--text-3);
+}
+/* Education read-stack row (S7): a plain read stack (degree/org/dates) that reveals a tint + hairline on
+   hover to signal it's a click-to-edit control. The 1px border is present-but-transparent by default so
+   the hover firms it with no layout shift; base bg/border live here so the :hover wins over the inline
+   layout style. */
+.cos-edurow {
+  background: transparent;
+  border: 1px solid transparent;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+.cos-edurow:hover {
+  background: var(--panel-2);
+  border-color: var(--line);
+}
+/* Admin "Reviewer powers" grid (C3): a hairline-separated grid of agent cells. The 1px gap over a
+   --line background paints the dividers; each cell's own --panel bg leaves only the gaps showing.
+   One column up to the ws-tabs breakpoint; two from 1120px — keyed to the viewport like the rest of
+   the shell, where the 220px rail + 48px page padding still leave ~400px cells (a lower breakpoint
+   crushes the strictness Segmented in the rail's shadow, e.g. ~305px cells at an 880px viewport). */
+.cos-rvgrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1px;
+  background: var(--line);
+  /* It's a <fieldset> (groups the preview controls for AT) — strip the UA chrome. */
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-inline-size: 0;
+}
+@media (min-width: 1120px) {
+  .cos-rvgrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+/* Dashed "Start application" tile: accents its border + ink and adds a faint accent tint on hover. */
+.cos-startcard {
+  border: 1.5px dashed var(--line-strong);
+  transition:
+    border-color 0.15s,
+    color 0.15s,
+    background 0.15s;
+}
+.cos-startcard:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 5%, transparent);
+}
+/* Import-modal drop-zone (C4): a dashed file target. Owns its base border + bg so the :hover firms
+   them (an inline border/bg would beat the stylesheet); the dragging state overrides them inline. */
+.cos-dropzone {
+  border: 1.5px dashed var(--line-strong);
+  background: var(--panel-2);
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+.cos-dropzone:hover {
+  border-color: var(--text-3);
+}
+/* The file input inside is visually hidden but focusable — show the keyboard ring on the zone. */
+.cos-dropzone:focus-within {
+  border-color: var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    /* biome-ignore lint/complexity/noImportantStyles: reduced-motion a11y reset must override component-level animation durations */
+    animation-duration: 0.001ms !important;
+    /* biome-ignore lint/complexity/noImportantStyles: reduced-motion a11y reset must override component-level transition durations */
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* App shell — the (app) route group's persistent left rail + content. Inline styles can't express the
+   responsive collapse, so (like .ws-cols/.ingest-cols) these structural classes own it. Single
+   boundary at 860px to avoid a fractional dead-zone. */
+.app-frame {
+  display: flex;
+  min-height: 100vh;
+}
+.app-rail {
+  flex: 0 0 var(--rail-w);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: auto;
+  /* 10px sides so the 64px strip's content column is exactly 44px and the active-item 3px bar
+     (`left:-10`) lands flush on the rail edge. */
+  padding: 14px 10px;
+  /* Respect the notch in both orientations (root sets viewportFit:cover). */
+  padding-top: calc(14px + env(safe-area-inset-top));
+  padding-left: calc(10px + env(safe-area-inset-left));
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+}
+.app-main {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.app-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+/* Brand row layout lives here (NOT inline in Sidebar.tsx) so the collapsed strip can override it to a
+   vertical logo-over-pin stack — an inline flex/height on the row would beat the stylesheet (the
+   documented gotcha). Only the row's margin/padding stay inline. */
+.app-railbrand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  height: 34px;
+}
+/* The rail pin button (locks the rail open). 26px visual centred in a 44×44 transparent ::after hit
+   target (rubric §6 — the same pattern as the admin Switch). Colour + background live here, NOT
+   inline: an inline background would beat the data-rail state rule below (inline > stylesheet). */
+.cos-railpin {
+  position: relative;
+  color: var(--text-3);
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.cos-railpin:hover {
+  background: var(--panel-2);
+}
+.cos-railpin::after {
+  content: "";
+  position: absolute;
+  inset: -9px;
+}
+/* Pinned ≡ expanded (data-rail): the pin lights accent to read as "locked open". */
+html[data-rail="expanded"] .cos-railpin {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+/* The AI-readiness pill hugs its content in the expanded rail. Kept in CSS (not inline) so the
+   collapsed rule (`align-self: stretch`) can override it to a full ≥44px target (DevPR5). */
+.app-railpill {
+  align-self: start;
+}
+/* Skip-to-content: off-screen until focused, so a keyboard/SR user can bypass the repeated rail. */
+.app-skip {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  z-index: 30;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transform: translateY(-150%);
+  transition: transform 0.12s ease;
+}
+.app-skip:focus {
+  transform: translateY(0);
+}
+/* The phone top bar (brand + theme + account) and bottom tab-bar — hidden on desktop, shown <720px
+   (the rail hides there). */
+.app-mobilehead {
+  display: none;
+}
+.app-mobilebar {
+  display: none;
+}
+/* Collapsed left rail (DevPR5) — desktop only (the rail is display:none <720px). When `data-rail`
+   is "collapsed" the rail becomes a FIXED icon strip and `.app-main` is offset by the narrow width;
+   hover/keyboard-focus widens the fixed rail OVER the content while the main offset stays narrow — so
+   the flyout never reflows the workspace (which would fight DevPR6's collapse-aware breakpoint) and it
+   escapes the rail's own `overflow:auto` because the rail element itself is what widens. `--rail-w` is
+   redefined to the collapsed width so the main offset shrinks with it. */
+@media (min-width: 720px) {
+  html[data-rail="collapsed"] {
+    --rail-w: var(--rail-w-collapsed);
+  }
+  html[data-rail="collapsed"] .app-rail {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: var(--rail-w);
+    z-index: 25;
+    transition: width 0.18s ease;
+  }
+  html[data-rail="collapsed"] .app-main {
+    margin-left: var(--rail-w);
+  }
+  /* ≥44px tap targets in the collapsed strip (resting nav rows are 40–46px). Declared before the
+     pseudo-class rules below so specificity stays ascending. */
+  html[data-rail="collapsed"] .app-rail .cos-navrow,
+  html[data-rail="collapsed"] .app-rail .app-railpill {
+    min-height: 44px;
+  }
+  /* Collapsed strip stacks the brand as logo-over-pin. The 64px height is RESERVED in the flyout too
+     (no `:not(:hover)` qualifier — the widen rule below doesn't drop this): if the brand block resized
+     the instant the pointer entered the strip, every nav row would shift and the user's aim target
+     would move mid-reach. ~30px whitespace under the brand is the deliberate cost. The pin stays
+     visible here (it carries no `.cos-rail-label`, so the label-clip rule never hides it). */
+  html[data-rail="collapsed"] .app-rail .app-railbrand {
+    flex-direction: column;
+    min-height: 64px;
+    height: auto;
+    gap: 6px;
+  }
+  /* Keep the brand wordmark clipped even during the flyout (the resting label-clip below is
+     `:not(:hover)`, so it would otherwise un-clip and re-flow "Contender" INTO this column, growing it
+     past the reserved 64px and re-introducing the vertical nav jump the reserve exists to prevent).
+     Nav-row labels still reveal on flyout — only the brand label is pinned out of flow; the logo +
+     always-visible pin are the brand's flyout affordance. */
+  html[data-rail="collapsed"] .app-rail .app-railbrand .cos-rail-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  html[data-rail="collapsed"] .app-rail:hover,
+  html[data-rail="collapsed"] .app-rail:focus-within {
+    width: var(--rail-w-expanded);
+    box-shadow: 10px 0 50px -22px rgba(0, 0, 0, 0.7);
+    z-index: 40;
+  }
+  /* Resting collapsed state (not hovered/focused): clip the text labels but KEEP them in the DOM for
+     the accessible name (the icons are aria-hidden), and centre the icons in the strip. The flyout
+     drops these rules on :hover/:focus-within, revealing the labels. */
+  html[data-rail="collapsed"] .app-rail:not(:hover):not(:focus-within) .cos-rail-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  html[data-rail="collapsed"] .app-rail:not(:hover):not(:focus-within) .cos-navrow,
+  html[data-rail="collapsed"] .app-rail:not(:hover):not(:focus-within) .app-railbrand,
+  html[data-rail="collapsed"] .app-rail:not(:hover):not(:focus-within) .app-railpill {
+    justify-content: center;
+  }
+  html[data-rail="collapsed"] .app-rail:not(:hover):not(:focus-within) .app-railpill {
+    align-self: stretch;
+  }
+}
+@media (max-width: 719.98px) {
+  .app-rail {
+    display: none;
+  }
+  /* border-box: keep a full 52px content row by adding the notch inset ON TOP of the height. */
+  .app-mobilehead {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    height: calc(52px + env(safe-area-inset-top));
+    padding: 0 12px;
+    padding-top: env(safe-area-inset-top);
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+  }
+  .app-mobilebar {
+    display: flex;
+    align-items: stretch;
+    gap: 4px;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    padding: 6px 4px;
+    padding-bottom: max(6px, env(safe-area-inset-bottom));
+    background: var(--panel);
+    border-top: 1px solid var(--line);
+  }
+  /* Clear the fixed bottom nav so the last content isn't hidden behind it. */
+  .app-main {
+    padding-bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom));
+  }
+}
+/* Plain `.ws-cols` (the application-detail page reuses this utility WITHOUT `data-ws-tab`) keeps the
+   original narrow stacking — the workspace's own responsive rules below are scoped to
+   `.ws-cols[data-ws-tab]`, so this `:not(...)` covers every non-workspace user. */
+@media (max-width: 1119.98px) {
+  .ws-cols:not([data-ws-tab]) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+/* Application-detail (`.ws-cols` without `data-ws-tab`): the page is the single scroller now, so once
+   the two columns sit side by side (≥1120, the same threshold the stack above releases) pin the short
+   action column — stage / recruiter / export / delete stay reachable beside a tall (2-page) CV. Stacked
+   below 1120 it stays in-flow (a sticky tall card stack would overlay the CV). Mirrors `.ws-rail-apply`
+   scoping; `.ws-cols`'s base `align-items:flex-start` keeps the column its natural height for sticky. */
+@media (min-width: 1120px) {
+  .ws-cols:not([data-ws-tab]) > .ws-app-aside {
+    position: sticky;
+    top: 2rem;
+  }
+}
+
+/* ── Workspace 3-pane layout (DevPR13; scroll model DevPR19) ──────────────────────────────────────
+   The 3-pane workspace (editor | preview | review) is viewport-bound and full-bleed, each pane
+   scrolling independently — shown from 1120px on WIDTH ALONE (rail state no longer gates the reflow).
+   Below 1120 the panes stack and a sticky tab bar gates to one pane at a time via `data-ws-tab`;
+   hidden panes stay MOUNTED (display:none) so refs / focus / the hoisted aria-live survive a switch.
+   ONE scroller per state: below 1120 the body is the only scroller; at/above it the page is pinned
+   (`.ws-page` height:100vh; overflow:hidden) and each pane owns its own scroll.
+
+   Parity note: in the 3-pane range the center preview pane is usually narrower than the 660px paper,
+   so the paper reflows narrower than the PDF (page-break markers auto-hide; EXPORT is unaffected).
+   Full preview==PDF wrapping returns once the viewport is wide enough for the preview pane to reach
+   660px — roughly ≥1410, a little higher with the rail expanded (the rail still eats real width even
+   though it no longer gates the reflow). The marker gutter (DevPR17) lives inside the paper padding so
+   it never widens the budget. */
+
+/* Stacked / tab-gated — the default below the 1120px 3-pane threshold. */
+@media (max-width: 1119.98px) {
+  .ws-cols[data-ws-tab] {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .ws-tabbar {
+    display: flex;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+  }
+  [data-ws-tab="editor"] .ws-tab-preview,
+  [data-ws-tab="editor"] .ws-tab-reviewers,
+  [data-ws-tab="preview"] .ws-left,
+  [data-ws-tab="preview"] .ws-tab-reviewers,
+  [data-ws-tab="reviewers"] .ws-left,
+  [data-ws-tab="reviewers"] .ws-tab-preview {
+    display: none;
+  }
+}
+
+/* 3-pane from 1120px — WIDTH ONLY (rail state no longer gates it). Soft pane minimums: the side panes
+   shrink (`flex: 0 1`) so the center preview holds ≥340px; below 1120 the block above stacks them. */
+@media (min-width: 1120px) {
+  .ws-page {
+    height: 100vh;
+    padding: 0;
+    overflow: hidden;
+  }
+  .ws-topbar,
+  .ws-banner {
+    flex: 0 0 auto;
+    max-width: none;
+    margin: 0;
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+  .ws-cols[data-ws-tab] {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-width: none;
+    margin: 0;
+    gap: 0;
+    flex-direction: row;
+    align-items: stretch;
+    overflow: hidden;
+  }
+  /* position:relative on each pane makes the pane the containing block for absolutely-positioned
+     descendants — without it, SR-only spans (position:absolute + clip, e.g. the navigator buttons'
+     "jump to this line" suffix) resolve their static position against <html>, escape every
+     overflow container, and extend the DOCUMENT scroll extent by the pane's content depth: the
+     window scrolls even though every visible box is viewport-locked. */
+  .ws-cols[data-ws-tab] > .ws-left {
+    position: relative;
+    flex: 0 1 340px;
+    min-width: 260px;
+    min-height: 0;
+    overflow-y: auto;
+    border-right: 1px solid var(--line);
+    padding: 16px 18px;
+  }
+  .ws-cols[data-ws-tab] > .ws-tab-preview {
+    position: relative;
+    flex: 1 1 0;
+    min-width: 340px;
+    min-height: 0;
+    overflow-y: auto;
+  }
+  /* The pane is the scroller now → drop the surface's own h-padding (so the paper hits 660). The old
+     max-height/overflow overrides are dead: the base `.ws-preview-surface` no longer sets them. */
+  .ws-cols[data-ws-tab] > .ws-tab-preview .ws-preview-surface {
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .ws-cols[data-ws-tab] > .ws-tab-reviewers {
+    position: relative;
+    flex: 0 1 286px;
+    min-width: 240px;
+    min-height: 0;
+    overflow-y: auto;
+    border-left: 1px solid var(--line);
+    padding: 15px 15px 22px;
+  }
+  /* Apply stays reachable below the tall roster: sticky to the rail scrollport at this 3-pane width.
+     Scoped to the 3-pane block only — at stacked/iPhone widths it's in-flow (the page scrolls and the
+     fixed bottom nav owns bottom:0). */
+  .ws-cols[data-ws-tab] > .ws-tab-reviewers .ws-rail-apply {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    padding-top: 12px;
+    background: var(--panel);
+    border-top: 1px solid var(--line);
+  }
+}
+/* Below the bottom-nav breakpoint the app's mobile top bar (.app-mobilehead) is sticky at top:0, so
+   offset the workspace tab bar to sit just under it (52px header + the notch inset). */
+@media (max-width: 719.98px) {
+  .ws-tabbar {
+    top: calc(52px + env(safe-area-inset-top));
+  }
+}

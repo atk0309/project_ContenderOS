@@ -1,0 +1,35 @@
+#!/bin/sh
+# Pre-push: enforce the agent-guidance contract, the invariant guards, and the doc-impact lint on
+# the refs actually being pushed. git feeds "<local-ref> <local-sha> <remote-ref> <remote-sha>"
+# per ref on stdin: deletes (all-zero local sha) and tag pushes are skipped (nothing to lint), and
+# each pushed branch tip is linted as --head <sha> against merge-base(<sha>, origin/main) — never
+# against the remote sha, which would turn this into a per-push-increment check where fixup pushes
+# block because the docs/regen live in earlier commits outside the increment.
+# Never bypass with --no-verify unless explicitly instructed.
+set -e
+
+shas=""
+while read -r local_ref local_sha remote_ref remote_sha; do
+  case "$local_sha" in
+    *[!0]*) ;;          # a real sha — keep
+    *) continue ;;      # all zeros = delete push
+  esac
+  case "$local_ref" in refs/tags/*) continue ;; esac
+  case "$remote_ref" in refs/tags/*) continue ;; esac
+  shas="$shas $local_sha"
+done
+
+if [ -z "$shas" ]; then
+  echo "[pre-push] only deletes/tags — nothing to lint"
+  exit 0
+fi
+
+echo "[pre-push] agent-guidance check"
+node scripts/check-agent-guidance.mjs
+echo "[pre-push] invariant guards"
+node scripts/check-invariants.mjs
+for sha in $shas; do
+  echo "[pre-push] doc-impact lint (fail-on-gap) @ $sha"
+  node scripts/check-doc-impact.mjs --fail-on-gap --head "$sha"
+done
+echo "[pre-push] OK"

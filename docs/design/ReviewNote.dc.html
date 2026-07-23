@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="margin:11px 0 6px;border:1px solid {{ note.color }};border-radius:10px;overflow:hidden;background:var(--paper-2);box-shadow:0 12px 30px -16px rgba(0,0,0,.45);animation:fadeUp .2s ease;font-family:var(--ui)">
+  <div style="display:flex;align-items:center;gap:9px;padding:9px 11px;background:{{ note.headBg }}">
+    <span style="width:20px;height:20px;flex:none;border-radius:6px;background:{{ note.color }};color:#14161a;font-family:var(--mono);font-size:9px;font-weight:600;display:flex;align-items:center;justify-content:center">{{ note.glyph }}</span>
+    <span style="font-size:12px;font-weight:600;color:{{ note.accentText }}">{{ note.reviewerName }}</span>
+    <span style="margin-left:auto;font-family:var(--mono);font-size:9px;letter-spacing:.05em;text-transform:uppercase;color:#6a655c">{{ note.severity }}</span>
+  </div>
+  <div style="padding:11px 12px 12px">
+    <div style="font-size:13px;font-weight:600;color:#1b1c1e;margin-bottom:4px">{{ note.title }}</div>
+    <div style="font-size:12.5px;line-height:1.55;color:#55514a">{{ note.body }}</div>
+
+    <sc-if value="{{ note.hasSuggestion }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:10px;padding:9px 11px;border-radius:7px;background:var(--paper);border:1px dashed #d8d3c6">
+        <div style="font-family:var(--mono);font-size:9px;letter-spacing:.05em;text-transform:uppercase;color:#8a857b;margin-bottom:4px">SUGGESTED</div>
+        <div style="font-family:var(--serif);font-size:13px;line-height:1.5;color:#1b1c1e">{{ note.suggestion }}</div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ note.showWorking }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;align-items:center;gap:9px;margin-top:11px;font-size:12px;color:{{ note.color }};font-weight:500">
+        <span style="width:13px;height:13px;border:2px solid {{ note.color }};border-top-color:transparent;border-radius:50%;display:inline-block;animation:spin .7s linear infinite"></span>{{ note.reviewerName }} is rewriting the line…
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ note.showResolved }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;align-items:center;gap:10px;margin-top:11px">
+        <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#2f7d52">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l4 4 10-10"/></svg>Resolved
+        </span>
+        <sc-if value="{{ note.showDiff }}" hint-placeholder-val="{{ false }}">
+          <button data-note-id="{{ note.id }}" onClick="{{ onDiff }}" style="font-family:var(--ui);font-size:11.5px;font-weight:600;color:#1b1c1e;background:transparent;border:1px solid #d8d3c6;border-radius:7px;padding:6px 11px" style-hover="background:var(--paper)">View diff →</button>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ note.showSignoff }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button data-note-id="{{ note.id }}" onClick="{{ onSignoff }}" style="flex:1;font-family:var(--ui);font-size:12px;font-weight:600;color:#14161a;background:{{ note.color }};border-radius:8px;padding:8px 10px" style-hover="filter:brightness(1.06)">Sign off — it’s true</button>
+        <button data-note-id="{{ note.id }}" onClick="{{ onRemove }}" style="font-family:var(--ui);font-size:12px;font-weight:500;color:#55514a;background:transparent;border:1px solid #d8d3c6;border-radius:8px;padding:8px 12px" style-hover="background:var(--paper)">Remove line</button>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ note.showFix }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button data-note-id="{{ note.id }}" onClick="{{ onAccept }}" style="flex:1;display:inline-flex;align-items:center;justify-content:center;gap:7px;font-family:var(--ui);font-size:12px;font-weight:600;color:#14161a;background:{{ note.color }};border-radius:8px;padding:8px 10px" style-hover="filter:brightness(1.06)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 21l3-1 11-11-2-2L4 18z"/></svg>Accept &amp; fix
+        </button>
+        <button data-note-id="{{ note.id }}" onClick="{{ onDismiss }}" style="font-family:var(--ui);font-size:12px;font-weight:500;color:#55514a;background:transparent;border:1px solid #d8d3c6;border-radius:8px;padding:8px 12px" style-hover="background:var(--paper)">Dismiss</button>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ note.showInfo }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:11px">
+        <button data-note-id="{{ note.id }}" onClick="{{ onDismiss }}" style="font-family:var(--ui);font-size:11.5px;font-weight:500;color:#55514a;background:transparent;border:1px solid #d8d3c6;border-radius:7px;padding:6px 11px" style-hover="background:var(--paper)">Got it</button>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ note.showComment }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:11px">
+        <button data-note-id="{{ note.id }}" onClick="{{ onDismiss }}" style="display:inline-flex;align-items:center;gap:6px;font-family:var(--ui);font-size:11.5px;font-weight:600;color:#55514a;background:transparent;border:1px solid #d8d3c6;border-radius:7px;padding:6px 11px" style-hover="background:var(--paper)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12l4 4 10-10"/></svg>{{ note.resolveLabel }}</button>
+      </div>
+    </sc-if>
+  </div>
+</div>
+</x-dc>
+<!-- Vendored snapshot from the Claude Design project (see README.md). The dc-runtime <script> and
+     data-props block are omitted; this file is a fidelity reference, not an executable mockup. -->
+</body>
+</html>

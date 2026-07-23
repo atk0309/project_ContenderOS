@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Contender — Documentation</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body { font: 16px/1.6 system-ui, sans-serif; max-width: 50rem; margin: 3rem auto; padding: 0 1.25rem; }
+    h1 { letter-spacing: -0.02em; } h2 { margin-top: 2rem; }
+    a { color: inherit; } ul { padding-left: 1.1rem; }
+    code { font-family: ui-monospace, monospace; font-size: 0.9em; }
+  </style>
+</head>
+<body>
+  <h1>Contender — Documentation</h1>
+  <p>Run <code>node scripts/quality-gate.mjs</code> before declaring work complete. The local gate is the source of truth for code correctness.</p>
+  <h2>Start here</h2>
+  <ul>
+    <li><a href="invariants.md">Invariants</a> — the contract that must not break</li>
+    <li><a href="ai-panel.md">AI panel</a></li>
+    <li><a href="testing/strategy.md">Testing strategy</a></li>
+    <li><a href="agent-guidance-changelog.md">Agent guidance changelog</a></li>
+  </ul>
+  <h2>Architecture</h2>
+  <ul>
+    <li><a href="architecture/overview.md">Overview</a></li>
+    <li><a href="architecture/data-model.md">Data model</a></li>
+    <li><a href="architecture/api.md">API and integrations</a></li>
+    <li><a href="architecture/security.md">Security</a></li>
+    <li><a href="architecture/deployment.md">Deployment</a></li>
+    <li><a href="architecture/observability.md">Observability</a></li>
+    <li><a href="architecture/renderer.md">Renderer</a></li>
+    <li><a href="architecture/schema-pipeline.md">Schema pipeline</a></li>
+    <li><a href="architecture/design-system.md">Design system — the fidelity contract (tokens, type, motion, agent identity, machine guard)</a> — canonical mockups vendored in <a href="design/">design/</a></li>
+  </ul>
+  <h2>Decisions</h2>
+  <ul>
+    <li><a href="adr/0001-split-fastapi-frontend.md">ADR 0001: Split — FastAPI + Next.js</a></li>
+    <li><a href="adr/0002-renderer-nextjs-colocated.md">ADR 0002: Renderer co-located</a></li>
+    <li><a href="adr/0003-stable-bullet-id-anchoring.md">ADR 0003: Stable-id anchoring</a></li>
+    <li><a href="adr/0004-pydantic-source-of-truth.md">ADR 0004: Pydantic source of truth</a></li>
+    <li><a href="adr/0005-private-backend-proxy.md">ADR 0005: Private backend behind the Next.js proxy</a></li>
+    <li><a href="adr/0006-db-encrypted-provider-secrets.md">ADR 0006: DB-encrypted provider keys + dynamic model tiers</a></li>
+    <li><a href="adr/0007-native-pdf-extraction.md">ADR 0007: Native PDF ingestion via Claude document blocks</a></li>
+    <li><a href="adr/0008-ingestion-reconciliation.md">ADR 0008: Ingestion reconciliation — classify-by-index, server-built, two-phase grounding</a></li>
+    <li><a href="adr/0009-application-lock-cv-immutability.md">ADR 0009: Application tracking — derived CV lock + immutable applied snapshot</a></li>
+    <li><a href="adr/0010-review-panel-transient-grounded.md">ADR 0010: AI Review Panel — transient reviews, workspace-scoped grounded routes, JobSpec snapshot</a></li>
+    <li><a href="adr/0011-design-system-and-transient-views.md">ADR 0011: Design system as a verifiable contract; Gatekeeper/Diff as transient per-CV views</a></li>
+    <li><a href="adr/0012-workspace-3pane-and-in-paper-editing.md">ADR 0012: 3-pane workspace + in-paper editing via a preview-only interactive template</a></li>
+    <li><a href="adr/0013-persisted-review-runs.md">ADR 0013: Persisted review runs (latest-only snapshot), decoupled from history</a></li>
+    <li><a href="adr/0014-incremental-apply-keeps-surviving-notes.md">ADR 0014: Incremental apply — resolve the applied note, keep the rest</a></li>
+    <li><a href="adr/0015-durable-derived-diff.md">ADR 0015: The Diff is durable by derivation from the review baseline</a></li>
+    <li><a href="adr/0016-drifted-review-stays-visible.md">ADR 0016: A drifted review stays visible — stale-marked, never hidden</a></li>
+    <li><a href="adr/_template.md">ADR template</a></li>
+  </ul>
+  <h2>Features</h2>
+  <ul>
+    <li><a href="features/workspace.md">Workspace — dashboard, tailor/draft, edit, sign off, export</a></li>
+    <li><a href="features/master.md">Master editor — the canonical CV: structured form, provenance ids, "Add source" import</a></li>
+    <li><a href="features/ingest.md">Profile ingestion — build the master from a CV / LinkedIn document or PDF</a></li>
+    <li><a href="features/navigation.md">App shell &amp; navigation — persistent rail, shared session, AI-readiness</a></li>
+    <li><a href="features/applications.md">Application tracking — lock the sent CV to a job, status pipeline</a></li>
+    <li><a href="features/admin.md">Admin Menu — provider keys (DB-encrypted, write-only) + model tiers</a></li>
+  </ul>
+  <h2>Runbooks</h2>
+  <ul>
+    <li><a href="runbooks/local-stack-and-ingest-verification.md">Local stack + live Playwright verification of the ingest flow</a></li>
+  </ul>
+  <h2>Templates</h2>
+  <ul>
+    <li><a href="features/_template.md">Feature documentation template</a></li>
+    <li><a href="runbooks/_template.md">Runbook template</a></li>
+  </ul>
+</body>
+</html>
