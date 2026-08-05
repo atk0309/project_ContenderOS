@@ -5,6 +5,7 @@ allowBuilds:
 
 minimumReleaseAgeExclude:
   - baseline-browser-mapping@2.11.1
+  - brace-expansion@2.1.4
 
 updateConfig:
   ignoreDependencies:
