@@ -17,7 +17,7 @@ dependencies = [
   "itsdangerous>=2.2",  # signed session cookie (Starlette SessionMiddleware) + magic-link tokens
   "httpx>=0.27",        # Authlib OIDC calls + Resend magic-link email
   "python-multipart>=0.0.32",  # FastAPI multipart/form parsing — the PDF UploadFile route (PR-C)
-  "pypdf>=6.14.2",      # PDF → text for audit/evidence/page-guard (NOT the extraction path; ADR 0007)
+  "pypdf>=6.15.0",      # PDF → text for audit/evidence/page-guard (NOT the extraction path; ADR 0007)
 ]
 
 [project.optional-dependencies]
