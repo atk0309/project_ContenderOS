@@ -6,10 +6,10 @@ requires-python = ">=3.14"
 dependencies = [
   "fastapi>=0.141.1",
   "pydantic>=2.9",
-  "pydantic-settings>=2.14.2",
+  "pydantic-settings>=2.15.0",
   "uvicorn[standard]>=0.52.0",
-  "anthropic>=0.120.2",  # messages.parse/parsed_output (structured outputs) — verified vs 0.109.2
-  "openai>=2.50.0",        # adjudication + list-models; non-beta responses.parse (verified vs 2.43.0)
+  "anthropic>=0.121.0",  # messages.parse/parsed_output (structured outputs) — verified vs 0.109.2
+  "openai>=2.53.0",        # adjudication + list-models; non-beta responses.parse (verified vs 2.43.0)
   "sqlalchemy[asyncio]>=2.0.51",  # persistence (admin-managed provider config)
   "asyncpg>=0.30",      # async Postgres driver for SQLAlchemy
   "cryptography>=50.0.0",   # Fernet — encrypt provider API keys at rest (was transitive via authlib)
@@ -17,16 +17,16 @@ dependencies = [
   "itsdangerous>=2.2",  # signed session cookie (Starlette SessionMiddleware) + magic-link tokens
   "httpx>=0.27",        # Authlib OIDC calls + Resend magic-link email
   "python-multipart>=0.0.32",  # FastAPI multipart/form parsing — the PDF UploadFile route (PR-C)
-  "pypdf>=6.14.2",      # PDF → text for audit/evidence/page-guard (NOT the extraction path; ADR 0007)
+  "pypdf>=6.15.0",      # PDF → text for audit/evidence/page-guard (NOT the extraction path; ADR 0007)
 ]
 
 [project.optional-dependencies]
 dev = [
-  "ruff>=0.16.0",
+  "ruff>=0.16.2",
   "mypy>=2.3.0",
   "pytest>=9.1.1",
   "aiosqlite>=0.20",  # offline test DB (sqlite+aiosqlite) so the suite needs no Postgres
-  "httpx2>=2.9.1",  # Starlette 1.3 TestClient; runtime Authlib/Resend calls still use httpx
+  "httpx2>=2.10.0",  # Starlette 1.3 TestClient; runtime Authlib/Resend calls still use httpx
 ]
 
 # Virtual project: uv never builds/installs it as a package (the Dockerfile syncs with
