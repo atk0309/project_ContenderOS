@@ -45,7 +45,7 @@ jobs:
 
       # --- Python toolchain (uv manages Python 3.14 itself) ---
       - name: Set up uv
-        uses: astral-sh/setup-uv@v9.0.0
+        uses: astral-sh/setup-uv@v10.0.1
         with:
           version: "0.11.31"
           enable-cache: true
